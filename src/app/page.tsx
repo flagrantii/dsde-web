@@ -1,27 +1,53 @@
 'use client'
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/src/components/ui/button"
 import { motion } from "framer-motion"
 import Link from "next/link"
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-background via-secondary to-background animate-gradient">
-      <div className="container mx-auto px-4 py-24">
+    <main className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background animate-gradient relative overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -inset-[10px] opacity-50">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute inset-0 animate-pulse"
+              style={{
+                background: `radial-gradient(circle at ${50 + i * 20}% ${50 + i * 10}%, rgba(34, 197, 94, 0.1), transparent 40%)`,
+                animationDelay: `${i * 0.5}s`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-24 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center space-y-6"
+          className="text-center space-y-8"
         >
-          <motion.h1 
-            className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-green-400"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ 
+              duration: 1,
+              type: "spring",
+              stiffness: 200
+            }}
           >
-            Research Discovery Assistant
-          </motion.h1>
+            <h1 className="text-5xl md:text-7xl font-bold">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-green-400 to-primary animate-gradient bg-300%">
+                Research Discovery
+              </span>
+              <br />
+              <span className="text-4xl md:text-5xl text-muted-foreground">
+                Assistant
+              </span>
+            </h1>
+          </motion.div>
           
           <motion.p 
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto"

@@ -43,8 +43,8 @@
 }
 
 .animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient 8s ease infinite;
+  animation: gradient 15s ease infinite;
+  background-size: 300% 300%;
 }
 
 @keyframes gradient {
@@ -62,6 +62,7 @@
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
   }
   
   .scrollbar-thumb-border::-webkit-scrollbar {
@@ -81,6 +82,10 @@
 .glass-effect {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+              0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .graph-container {
@@ -97,5 +102,27 @@
     transparent 70%
   );
   pointer-events: none;
+  animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+.graph-link:hover {
+  stroke: var(--primary);
+  stroke-width: 2;
+  transition: all 0.2s ease;
+}
+
+@keyframes nodeHover {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.node-hover {
+  animation: nodeHover 1s ease infinite;
 }
  

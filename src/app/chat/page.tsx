@@ -1,49 +1,77 @@
 'use client'
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Send, Loader2, ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
+import { cn } from "@/src/lib/utils"
 import Link from "next/link"
-import { ChatMessage } from "@/components/ui/chat-message"
-import ResearchGraph from "@/components/ResearchGraph"
-import PaperDetails from "@/components/PaperDetails"
+import { ChatMessage } from "@/src/components/ui/chat-message"
+import ResearchGraph from "@/src/components/research/graph/ResearchGraph"
+import PaperDetails from "@/src/components/research/papers/PaperDetails"
+import { Message, GraphNode, Paper, GraphData, FilterOptions } from "@/src/types"
+import { useGraph } from "@/src/lib/hooks/useGraph"
 
-interface Message {
-  id: string
-  content: string
-  role: 'user' | 'assistant'
-  timestamp: Date
-}
-
-interface GraphNode {
-  id: string
-  title: string
-  type: 'paper' | 'keyword'
-  color?: string
+// Initial graph data
+const initialGraphData = {
+  nodes: [
+    { 
+      id: '1', 
+      title: 'Machine Learning Basics', 
+      type: 'paper', 
+      color: '#22c55e',
+      citations: 1200,
+      year: 2022,
+      relevance: 0.95
+    },
+    // Add more sample nodes here
+  ],
+  links: [
+    { source: '1', target: '3', strength: 0.8 },
+    // Add more sample links here
+  ]
 }
 
 export default function ChatPage() {
+  // Chat state
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const [selectedPaper, setSelectedPaper] = useState<string>()
+
+  // Graph state using custom hook
+  const {
+    graphData,
+    filters,
+    setFilters,
+    hoveredNode,
+    graphLoading,
+    fgRef,
+    filteredData,
+    handleNodeClick,
+    handleNodeHover,
+    zoomIn,
+    zoomOut,
+    resetView
+  } = useGraph(initialGraphData as GraphData)
+
+  // Selected paper state
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
 
-  const scrollToBottom = () => {
+  // Scroll to bottom of chat
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+  }, [])
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [messages, scrollToBottom])
 
+  // Handle message submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim()) return
+    if (!input.trim() || isLoading) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -69,10 +97,11 @@ export default function ChatPage() {
     }, 1000)
   }
 
-  const handleNodeClick = (node: GraphNode) => {
+  // Handle node click in graph
+  const onNodeClick = useCallback((node: GraphNode) => {
     setSelectedNode(node)
     setInput(`Tell me more about "${node.title}"`)
-  }
+  }, [])
 
   return (
     <div className="flex h-screen bg-background">
@@ -145,34 +174,28 @@ export default function ChatPage() {
         {/* Graph Panel */}
         <div className="w-1/3 border-l border-border pt-16 hidden lg:block">
           <div className="h-full bg-secondary/30">
-            <div className="p-4 border-b border-border">
-              <h3 className="text-sm font-medium">Research Connections</h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Click on nodes to explore related research
-              </p>
-            </div>
-            <div className="p-4">
-              <ResearchGraph
-                selectedPaper={selectedPaper}
-                onNodeClick={handleNodeClick}
-              />
-            </div>
+            <ResearchGraph
+              selectedPaper={selectedNode?.id}
+              onNodeClick={onNodeClick}
+            />
           </div>
         </div>
       </div>
 
       {/* Paper Details Panel */}
-      <PaperDetails
-        paper={selectedNode ? {
-          title: selectedNode.title,
-          type: selectedNode.type,
-          abstract: "Sample abstract for the selected paper...",
-          authors: ["Author 1", "Author 2"],
-          year: 2024,
-          citations: 42
-        } : null}
-        onClose={() => setSelectedNode(null)}
-      />
+      {selectedNode && (
+        <PaperDetails
+          paper={{
+            title: selectedNode.title,
+            type: selectedNode.type,
+            abstract: "Sample abstract for the selected paper...",
+            authors: ["Author 1", "Author 2"],
+            year: selectedNode.year,
+            citations: selectedNode.citations,
+          }}
+          onClose={() => setSelectedNode(null)}
+        />
+      )}
     </div>
   )
 } 
