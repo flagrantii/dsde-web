@@ -33,7 +33,7 @@ export function ChatMessage({ content, role, timestamp }: ChatMessageProps) {
           <span className={cn(
             "px-2 py-1 rounded-full text-xs font-medium",
             role === 'user' 
-              ? "bg-primary/20 text-primary-foreground"
+              ? "bg-primary/20 text-secondary-foreground"
               : "bg-secondary text-secondary-foreground"
           )}>
             {role === 'user' ? 'You' : 'Assistant'}

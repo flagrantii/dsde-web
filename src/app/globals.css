@@ -125,4 +125,35 @@
 .node-hover {
   animation: nodeHover 1s ease infinite;
 }
+
+.particle {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  animation: particle-fade 2s ease-out forwards;
+}
+
+@keyframes particle-fade {
+  0% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% { 
+    opacity: 0;
+    transform: scale(0);
+  }
+}
+
+.skeleton-pulse {
+  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
  

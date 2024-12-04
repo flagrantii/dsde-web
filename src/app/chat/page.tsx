@@ -103,6 +103,11 @@ export default function ChatPage() {
     setInput(`Tell me more about "${node.title}"`)
   }, [])
 
+  // Add handleCloseDetails function
+  const handleCloseDetails = useCallback(() => {
+    setSelectedNode(null)
+  }, [])
+
   return (
     <div className="flex h-screen bg-background">
       {/* Header */}
@@ -193,7 +198,7 @@ export default function ChatPage() {
             year: selectedNode.year,
             citations: selectedNode.citations,
           }}
-          onClose={() => setSelectedNode(null)}
+          onClose={handleCloseDetails}
         />
       )}
     </div>

@@ -20,35 +20,59 @@ export default function PaperDetails({ paper, onClose }: PaperDetailsProps) {
   if (!paper) return null
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
         initial={{ opacity: 0, x: 300 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 300 }}
-        className="fixed top-0 right-0 w-96 h-full bg-background border-l border-border p-6 overflow-y-auto"
+        transition={{ type: "spring", damping: 20 }}
+        className="fixed top-0 right-0 w-96 h-full bg-background/95 backdrop-blur-sm border-l border-border p-6 overflow-y-auto z-50"
       >
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold">Paper Details</h2>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+        {/* Close button at top */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="absolute top-4 right-4 flex gap-2"
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="hover:bg-secondary/80"
+          >
             <X className="w-4 h-4" />
           </Button>
-        </div>
+        </motion.div>
 
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-xl font-medium">{paper.title}</h3>
+        {/* Content */}
+        <div className="space-y-6 mt-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <h3 className="text-xl font-medium text-primary">{paper.title}</h3>
             <p className="text-sm text-muted-foreground mt-1">Type: {paper.type}</p>
-          </div>
+          </motion.div>
 
           {paper.abstract && (
-            <div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
               <h4 className="text-sm font-medium mb-2">Abstract</h4>
-              <p className="text-sm text-muted-foreground">{paper.abstract}</p>
-            </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">{paper.abstract}</p>
+            </motion.div>
           )}
 
           {paper.authors && (
-            <div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
               <h4 className="text-sm font-medium mb-2">Authors</h4>
               <div className="flex flex-wrap gap-2">
                 {paper.authors.map(author => (
@@ -60,11 +84,16 @@ export default function PaperDetails({ paper, onClose }: PaperDetailsProps) {
                   </span>
                 ))}
               </div>
-            </div>
+            </motion.div>
           )}
 
           {(paper.year || paper.citations) && (
-            <div className="flex gap-4">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex gap-4 pt-4 border-t border-border"
+            >
               {paper.year && (
                 <div>
                   <h4 className="text-sm font-medium mb-1">Year</h4>
@@ -77,9 +106,34 @@ export default function PaperDetails({ paper, onClose }: PaperDetailsProps) {
                   <p className="text-sm text-muted-foreground">{paper.citations}</p>
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
         </div>
+
+        {/* Close button at bottom */}
+        <motion.div 
+          className="fixed bottom-6 left-6 right-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Button
+            variant="secondary"
+            className="w-full glass-effect"
+            onClick={onClose}
+          >
+            Close Details
+          </Button>
+        </motion.div>
+
+        {/* Overlay to close on click outside */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-background/20 backdrop-blur-sm -z-10"
+          onClick={onClose}
+        />
       </motion.div>
     </AnimatePresence>
   )
