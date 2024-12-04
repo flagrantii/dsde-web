@@ -1,10 +1,14 @@
 'use client'
 
-import { useCallback, useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useState, useRef, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ZoomIn, ZoomOut, RotateCw, Loader2 } from 'lucide-react'
 import { Button } from '../../ui/button'
+import { useDispatch, useSelector } from 'react-redux'
+import { RootState } from '@/src/store'
+import { updateGraphData, resetGraph } from '@/src/store/features/graphSlice'
+import { useGraphOperations } from '@/src/lib/hooks/useGraphOperations'
 
 // Dynamically import ForceGraph2D with no SSR
 const ForceGraph2D = dynamic(
@@ -39,26 +43,53 @@ interface ResearchGraphProps {
 }
 
 export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGraphProps) {
-  const [graphData, setGraphData] = useState<GraphData>({
-    nodes: [
-      { id: '1', title: 'Machine Learning Basics', type: 'paper', color: '#22c55e' },
-      { id: '2', title: 'Deep Learning', type: 'paper', color: '#22c55e' },
-      { id: '3', title: 'Neural Networks', type: 'keyword', color: '#6b7280' },
-      { id: '4', title: 'AI Applications', type: 'paper', color: '#22c55e' },
-      { id: '5', title: 'Data Science', type: 'keyword', color: '#6b7280' },
-    ],
-    links: [
-      { source: '1', target: '3' },
-      { source: '2', target: '3' },
-      { source: '3', target: '4' },
-      { source: '4', target: '5' },
-      { source: '1', target: '5' },
-    ]
-  })
-
+  const {
+    graph,
+    nodes,
+    links,
+    updateGraphData
+  } = useGraphOperations()
+  
   const fgRef = useRef<any>()
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null)
-  const [graphLoading, setGraphLoading] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Reset node positions while keeping the graph structure
+  const resetPositions = useCallback(() => {
+    if (fgRef.current) {
+      // Reset zoom and center
+      fgRef.current.centerAt(0, 0, 1000)
+      fgRef.current.zoom(1, 1000)
+
+      // Reset all nodes positions
+      const updatedNodes = graph.nodes.map(node => ({
+        ...node,
+        // Remove any fixed positions
+        fx: undefined,
+        fy: undefined,
+        // Set random initial positions in a circle
+        x: Math.cos(Math.random() * 2 * Math.PI) * 200,
+        y: Math.sin(Math.random() * 2 * Math.PI) * 200,
+        // Reset velocities
+        vx: 0,
+        vy: 0
+      }))
+
+      // Update the graph
+      updateGraphData({
+        nodes: updatedNodes,
+        links: [...graph.links]
+      })
+
+      // Reheat and restart the simulation
+      fgRef.current.d3ReheatSimulation()
+      
+      // Force a few simulation ticks for immediate feedback
+      for (let i = 0; i < 20; i++) {
+        fgRef.current.d3Force('simulation').tick()
+      }
+    }
+  }, [graph, updateGraphData])
 
   const handleNodeClick = useCallback((node: GraphNode) => {
     onNodeClick?.(node)
@@ -67,23 +98,10 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
     fgRef.current?.zoom(2, 1000)
   }, [onNodeClick])
 
-  const handleNodeHover = (node: GraphNode | null) => {
+  const handleNodeHover = useCallback((node: GraphNode | null) => {
     setHoveredNode(node)
     document.body.style.cursor = node ? 'pointer' : 'default'
-  }
-
-  const zoomIn = () => {
-    fgRef.current?.zoom(fgRef.current.zoom() * 1.5, 400)
-  }
-
-  const zoomOut = () => {
-    fgRef.current?.zoom(fgRef.current.zoom() / 1.5, 400)
-  }
-
-  const resetView = () => {
-    fgRef.current?.centerAt(0, 0, 1000)
-    fgRef.current?.zoom(1, 400)
-  }
+  }, [])
 
   // Add a loading state while the graph component is being loaded
   const [isComponentLoading, setIsComponentLoading] = useState(true)
@@ -92,6 +110,29 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
     // Set loading to false after component mounts
     setIsComponentLoading(false)
   }, [])
+
+  // Create a mutable copy of the graph data with proper prototypes
+  const graphData = useMemo(() => ({
+    nodes: graph.nodes.map(node => ({
+      ...node,
+      __indexColor: undefined,
+      // Add any force graph specific properties
+      x: node.x,
+      y: node.y,
+      vx: 0,
+      vy: 0,
+      fx: node.fx,
+      fy: node.fy,
+      index: node.index
+    })),
+    links: graph.links.map(link => ({
+      ...link,
+      // Add any force graph specific properties
+      index: undefined,
+      source: link.source,
+      target: link.target
+    }))
+  }), [graph])
 
   if (isComponentLoading) {
     return (
@@ -161,11 +202,14 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
           linkDirectionalParticleWidth={1.4}
           linkDirectionalParticleSpeed={0.006}
           
-          // Better force simulation settings
-          d3AlphaDecay={0.02} // Slower decay for smoother movement
-          d3VelocityDecay={0.3} // Less friction
-          warmupTicks={100} // More initial ticks for better layout
+          // Improved force simulation settings for better layout
+          d3AlphaDecay={0.01} // Slower decay for smoother movement
+          d3VelocityDecay={0.2} // Less friction for more natural movement
+          warmupTicks={50} 
           cooldownTicks={Infinity} // Keep simulation running
+          onEngineStop={() => {
+            // Optional: do something when simulation stops
+          }}
           
           // Interaction settings
           enableNodeDrag={true}
@@ -192,7 +236,7 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
         />
       </motion.div>
 
-      {/* Enhanced controls */}
+      {/* Single reset button */}
       <motion.div 
         className="absolute bottom-4 right-4 flex gap-2"
         initial={{ opacity: 0, y: 20 }}
@@ -202,26 +246,20 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
         <Button
           variant="secondary"
           size="icon"
-          onClick={zoomIn}
-          className="w-8 h-8 glass-effect"
+          onClick={resetPositions}
+          className="w-8 h-8 glass-effect relative group"
         >
-          <ZoomIn className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="secondary"
-          size="icon"
-          onClick={zoomOut}
-          className="w-8 h-8 glass-effect"
-        >
-          <ZoomOut className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="secondary"
-          size="icon"
-          onClick={resetView}
-          className="w-8 h-8 glass-effect"
-        >
-          <RotateCw className="w-4 h-4" />
+          <motion.div 
+            className="w-4 h-4"
+            initial={{ rotate: 0 }}
+            whileHover={{ rotate: 180 }}
+            transition={{ duration: 0.3 }}
+          >
+            <RotateCw className="w-4 h-4" />
+          </motion.div>
+          <span className="absolute -top-8 right-0 bg-background/90 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+            Reset Layout
+          </span>
         </Button>
       </motion.div>
 

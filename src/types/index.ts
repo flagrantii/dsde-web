@@ -3,17 +3,24 @@ export interface GraphNode {
   title: string
   type: 'paper' | 'keyword'
   color?: string
-  x?: number
-  y?: number
   citations?: number
   year?: number
   relevance?: number
+  x?: number
+  y?: number
+  vx?: number
+  vy?: number
+  fx?: number
+  fy?: number
+  __indexColor?: string
+  index?: number
 }
 
 export interface GraphLink {
   source: string
   target: string
   strength?: number
+  index?: number
 }
 
 export interface GraphData {
