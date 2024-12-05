@@ -302,8 +302,8 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
           
           // Performance and aesthetics
           backgroundColor="transparent"
-          width={500}
-          height={600}
+          width={945}
+          height={935}
           
           // Event handlers
           onNodeClick={handleNodeClick as any}

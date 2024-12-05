@@ -237,7 +237,7 @@ export default function ChatPage() {
           className={cn(
             "flex flex-col transition-all duration-300 ease-in-out",
             showGraph 
-              ? "w-1/2 border-r border-border" 
+              ? "w-1/2 border-r border-border"
               : "w-full"
           )}
         >
@@ -314,7 +314,7 @@ export default function ChatPage() {
           {showGraph && (
             <motion.div
               initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: "33.333333%" }}
+              animate={{ opacity: 1, width: "50%" }}
               exit={{ opacity: 0, width: 0 }}
               transition={{ duration: 0.3 }}
               className="h-full bg-secondary/30"
