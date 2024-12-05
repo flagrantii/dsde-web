@@ -12,6 +12,11 @@ import ResearchGraph from "@/src/components/research/graph/ResearchGraph"
 import PaperDetails from "@/src/components/research/papers/PaperDetails"
 import { Message, GraphNode, Paper, GraphData, FilterOptions } from "@/src/types"
 import { useGraph } from "@/src/lib/hooks/useGraph"
+import { ChatSelection } from '@/src/components/ui/chat-selection'
+import { addLink, addNode } from "@/src/store/features/graphSlice"
+import { useDispatch } from 'react-redux'
+import { SelectionHistory } from '@/src/components/ui/selection-history'
+import { useLocalStorage } from "@/src/lib/hooks/useLocalStorage"
 
 // Initial graph data
 const initialGraphData = {
@@ -62,6 +67,9 @@ export default function ChatPage() {
   // Selected paper state
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
 
+  // Add selection history state
+  const [selectionHistory, setSelectionHistory] = useLocalStorage<GraphNode[]>('selection-history', [])
+
   // Scroll to bottom of chat
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -71,7 +79,10 @@ export default function ChatPage() {
     scrollToBottom()
   }, [messages, scrollToBottom])
 
-  // Handle message submission
+  // Add dispatch declaration
+  const dispatch = useDispatch()
+
+  // Handle message submission with selection logic
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || isLoading) return
@@ -80,36 +91,80 @@ export default function ChatPage() {
       id: Date.now().toString(),
       content: input,
       role: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
+      selectedNode: selectedNode,
+      status: selectedNode ? 'selected' : 'unselected'
     }
 
     setMessages(prev => [...prev, userMessage])
     setInput('')
     setIsLoading(true)
 
-    // Simulate AI response - Replace with actual API call
     setTimeout(() => {
+      const hasPaper = Math.random() > 0.5
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "This is a simulated response. Connect to Gemini API for real responses.",
+        content: hasPaper 
+          ? "I found a relevant paper. Creating a new node in the graph..."
+          : "This is a regular response without paper detection.",
         role: 'assistant',
-        timestamp: new Date()
+        timestamp: new Date(),
+        status: hasPaper ? 'selected' : 'unselected'
       }
+
       setMessages(prev => [...prev, assistantMessage])
+      
+      if (hasPaper && selectedNode) {
+        const newNodeId = Date.now().toString()
+        const newNode: GraphNode = {
+          id: newNodeId,
+          data: {
+            title: 'New Related Paper',
+            type: 'paper',
+            color: '#22c55e',
+            year: 2024,
+            citations: 0,
+            relevance: 0.8
+          }
+        }
+        
+        dispatch(addNode(newNode))
+        dispatch(addLink({ 
+          source: selectedNode.id, 
+          target: newNodeId,
+          strength: 0.5 
+        }))
+      }
+
       setIsLoading(false)
     }, 1000)
   }
 
-  // Handle node click in graph
-  const onNodeClick = useCallback((node: GraphNode) => {
+  // Handle node selection
+  const handleNodeSelect = useCallback((node: GraphNode) => {
     setSelectedNode(node)
-    setInput(`Tell me more about "${node?.data?.title}"`)
-  }, [])
+    setInput(`Tell me more about "${node.data.title}"`)
+    
+    setSelectionHistory((prev: GraphNode[]) => {
+      const exists = prev.some((n: GraphNode) => n.id === node.id)
+      if (!exists) {
+        return [node, ...prev].slice(0, 5) // Keep last 5 selections
+      }
+      return prev
+    })
+  }, [setSelectionHistory])
 
-  // Add handleCloseDetails function
-  const handleCloseDetails = useCallback(() => {
+  // Clear selection
+  const handleClearSelection = useCallback(() => {
     setSelectedNode(null)
   }, [])
+
+  // Add history clear handler
+  const handleClearHistory = useCallback((nodeId: string) => {
+    setSelectionHistory((prev: GraphNode[]) => 
+      prev.filter((node: GraphNode) => node.id !== nodeId)
+    )
+  }, [setSelectionHistory])
 
   return (
     <div className="flex h-screen bg-background">
@@ -160,14 +215,30 @@ export default function ChatPage() {
           )}
         >
           <div className="flex-1 flex flex-col h-full p-4">
+            {/* Selection display and history */}
+            <div className="space-y-4 mb-4">
+              <AnimatePresence>
+                {selectedNode && (
+                  <ChatSelection
+                    selectedNode={selectedNode}
+                    onClear={handleClearSelection}
+                  />
+                )}
+              </AnimatePresence>
+              
+              <SelectionHistory
+                history={selectionHistory}
+                onSelect={handleNodeSelect}
+                onClear={handleClearHistory}
+              />
+            </div>
+
             <div className="flex-1 overflow-y-auto space-y-4 pb-4 scrollbar-thin scrollbar-thumb-border">
               <AnimatePresence initial={false}>
                 {messages.map((message) => (
                   <ChatMessage
                     key={message.id}
-                    content={message.content}
-                    role={message.role}
-                    timestamp={message.timestamp}
+                    {...message}
                   />
                 ))}
               </AnimatePresence>
@@ -222,7 +293,7 @@ export default function ChatPage() {
             >
               <ResearchGraph
                 selectedPaper={selectedNode?.id}
-                onNodeClick={onNodeClick}
+                onNodeClick={handleNodeSelect}
               />
             </motion.div>
           )}
@@ -240,7 +311,7 @@ export default function ChatPage() {
             year: selectedNode?.data?.year,
             citations: selectedNode?.data?.citations,
           }}
-          onClose={handleCloseDetails}
+          onClose={handleClearSelection}
         />
       )}
     </div>

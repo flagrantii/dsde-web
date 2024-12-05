@@ -36,6 +36,8 @@ export interface Message {
   content: string
   role: 'user' | 'assistant'
   timestamp: Date
+  selectedNode?: GraphNode | null
+  status?: 'selected' | 'unselected'
 }
 
 export interface Paper {
