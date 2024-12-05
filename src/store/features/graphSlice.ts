@@ -19,27 +19,33 @@ const initialState: GraphData = {
   nodes: [
     createNode({ 
       id: '1', 
-      title: 'Machine Learning Basics', 
-      type: 'paper', 
-      color: '#22c55e',
-      citations: 1200,
-      year: 2022,
-      relevance: 0.95
+      data: {
+        title: 'Machine Learning Basics', 
+        type: 'paper', 
+        color: '#22c55e',
+        citations: 1200,
+        year: 2022,
+        relevance: 0.95
+      }
     }),
     createNode({ 
       id: '2', 
-      title: 'Deep Learning', 
-      type: 'paper', 
-      color: '#22c55e',
-      citations: 800,
-      year: 2023,
-      relevance: 0.85
+      data: {
+        title: 'Deep Learning', 
+        type: 'paper', 
+        color: '#22c55e',
+        citations: 800,
+        year: 2023,
+        relevance: 0.85
+      }
     }),
     createNode({ 
       id: '3', 
-      title: 'Neural Networks', 
-      type: 'keyword', 
-      color: '#6b7280' 
+      data: {
+        title: 'Neural Networks', 
+        type: 'keyword', 
+        color: '#6b7280' 
+      }
     }),
   ],
   links: [

@@ -1,11 +1,6 @@
 export interface GraphNode {
   id: string
-  title: string
-  type: 'paper' | 'keyword'
-  color?: string
-  citations?: number
-  year?: number
-  relevance?: number
+  data: Paper
   x?: number
   y?: number
   vx?: number
@@ -45,10 +40,11 @@ export interface Message {
 
 export interface Paper {
   title: string
-  type: string
+  type: 'paper' | 'keyword'
+  color?: string
+  citations?: number
+  year?: number
   abstract?: string
   authors?: string[]
-  year?: number
-  citations?: number
   relevance?: number
 } 

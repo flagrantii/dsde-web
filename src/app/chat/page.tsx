@@ -17,13 +17,15 @@ import { useGraph } from "@/src/lib/hooks/useGraph"
 const initialGraphData = {
   nodes: [
     { 
-      id: '1', 
-      title: 'Machine Learning Basics', 
-      type: 'paper', 
-      color: '#22c55e',
-      citations: 1200,
-      year: 2022,
-      relevance: 0.95
+      id: '1',
+      data: {
+        title: 'Machine Learning Basics', 
+        type: 'paper', 
+        color: '#22c55e',
+        citations: 1200,
+        year: 2022,
+        relevance: 0.95
+      }
     },
     // Add more sample nodes here
   ],
@@ -101,7 +103,7 @@ export default function ChatPage() {
   // Handle node click in graph
   const onNodeClick = useCallback((node: GraphNode) => {
     setSelectedNode(node)
-    setInput(`Tell me more about "${node.title}"`)
+    setInput(`Tell me more about "${node?.data?.title}"`)
   }, [])
 
   // Add handleCloseDetails function
@@ -231,12 +233,12 @@ export default function ChatPage() {
       {selectedNode && (
         <PaperDetails
           paper={{
-            title: selectedNode.title,
-            type: selectedNode.type,
+            title: selectedNode?.data?.title,
+            type: selectedNode?.data?.type,
             abstract: "Sample abstract for the selected paper...",
             authors: ["Author 1", "Author 2"],
-            year: selectedNode.year,
-            citations: selectedNode.citations,
+            year: selectedNode?.data?.year,
+            citations: selectedNode?.data?.citations,
           }}
           onClose={handleCloseDetails}
         />

@@ -9,23 +9,13 @@ import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from '@/src/store'
 import { updateGraphData, resetGraph } from '@/src/store/features/graphSlice'
 import { useGraphOperations } from '@/src/lib/hooks/useGraphOperations'
+import { GraphNode } from "@/src/types"
 
 // Dynamically import ForceGraph2D with no SSR
 const ForceGraph2D = dynamic(
   () => import('react-force-graph-2d'),
   { ssr: false }
 )
-
-interface GraphNode {
-  id: string
-  title: string
-  type: 'paper' | 'keyword'
-  color?: string
-  x?: number
-  y?: number
-  citations?: number
-  year?: number
-}
 
 interface GraphLink {
   source: string
@@ -39,7 +29,7 @@ interface GraphData {
 
 interface ResearchGraphProps {
   selectedPaper?: string
-  onNodeClick?: (node: GraphNode) => void
+  onNodeClick: (node: GraphNode) => void
 }
 
 export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGraphProps) {
@@ -160,72 +150,157 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
           nodeLabel="title"
           nodeRelSize={6}
           nodeCanvasObject={(node: any, ctx, globalScale) => {
-            const size = node.type === 'paper' ? 5 : 4
+            // Early return if coordinates are invalid
+            if (!node?.x || !node?.y || isNaN(node.x) || isNaN(node.y)) return;
+
+            const isSelected = node.id === selectedPaper
+            const isHovered = hoveredNode?.id === node.id
+            const isPaper = node.data.type === 'paper'
+            
+            const baseSize = isPaper ? 6 : 4
+            const size = isSelected || isHovered ? baseSize * 1.4 : baseSize
             const fontSize = Math.min(4, 12/globalScale)
             
-            // Draw node
+            // Ensure coordinates are finite numbers
+            const x = Number(node.x)
+            const y = Number(node.y)
+            
+            // Draw node glow effect
+            if (isSelected || isHovered) {
+              ctx.beginPath()
+              ctx.arc(x, y, size + 2, 0, 2 * Math.PI)
+              ctx.fillStyle = `rgba(34, 197, 94, ${isSelected ? 0.2 : 0.1})`
+              ctx.fill()
+            }
+            
+            // Draw main node
             ctx.beginPath()
-            ctx.arc(node.x, node.y, size, 0, 2 * Math.PI)
-            ctx.fillStyle = hoveredNode?.id === node.id 
-              ? node.type === 'paper' ? '#4ade80' : '#9ca3af'
-              : node.color
+            ctx.arc(x, y, size, 0, 2 * Math.PI)
+            
+            try {
+              // Create gradient for node
+              const gradient = ctx.createRadialGradient(
+                x, y, 0,
+                x, y, size
+              )
+              
+              if (isPaper) {
+                gradient.addColorStop(0, '#4ade80')
+                gradient.addColorStop(1, '#22c55e')
+              } else {
+                gradient.addColorStop(0, '#9ca3af')
+                gradient.addColorStop(1, '#6b7280')
+              }
+              
+              ctx.fillStyle = isHovered 
+                ? isPaper ? '#4ade80' : '#9ca3af'
+                : gradient
+            } catch (error) {
+              // Fallback if gradient creation fails
+              ctx.fillStyle = isPaper ? '#4ade80' : '#9ca3af'
+            }
+            
             ctx.fill()
 
-            // Draw label only when zoomed in or hovered
-            if (globalScale > 0.4 || hoveredNode?.id === node.id) {
-              const label = node.title
+            // Add border
+            ctx.strokeStyle = isSelected 
+              ? '#22c55e' 
+              : isHovered 
+                ? '#ffffff' 
+                : 'rgba(255,255,255,0.2)'
+            ctx.lineWidth = isSelected ? 2 : 1
+            ctx.stroke()
+
+            // Draw label with improved visibility
+            if (globalScale > 0.4 || isHovered || isSelected) {
+              const label = node.data.title
               ctx.font = `${fontSize}px Inter`
               const textWidth = ctx.measureText(label).width
-              const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2)
+              const padding = 4
+              const bckgDimensions = [
+                textWidth + padding * 2,
+                fontSize + padding * 2
+              ]
 
-              // Draw label background
-              ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'
-              ctx.fillRect(
-                node.x - bckgDimensions[0] / 2,
-                node.y + size * 2,
-                bckgDimensions[0],
-                bckgDimensions[1]
-              )
+              // Draw label background with rounded corners
+              const radius = 4
+              const labelX = x - bckgDimensions[0] / 2
+              const labelY = y + size * 2
+              
+              try {
+                ctx.beginPath()
+                ctx.moveTo(labelX + radius, labelY)
+                ctx.lineTo(labelX + bckgDimensions[0] - radius, labelY)
+                ctx.quadraticCurveTo(labelX + bckgDimensions[0], labelY, labelX + bckgDimensions[0], labelY + radius)
+                ctx.lineTo(labelX + bckgDimensions[0], labelY + bckgDimensions[1] - radius)
+                ctx.quadraticCurveTo(labelX + bckgDimensions[0], labelY + bckgDimensions[1], labelX + bckgDimensions[0] - radius, labelY + bckgDimensions[1])
+                ctx.lineTo(labelX + radius, labelY + bckgDimensions[1])
+                ctx.quadraticCurveTo(labelX, labelY + bckgDimensions[1], labelX, labelY + bckgDimensions[1] - radius)
+                ctx.lineTo(labelX, labelY + radius)
+                ctx.quadraticCurveTo(labelX, labelY, labelX + radius, labelY)
+                ctx.closePath()
+                
+                // Create gradient for label background
+                const bgGradient = ctx.createLinearGradient(labelX, labelY, labelX, labelY + bckgDimensions[1])
+                bgGradient.addColorStop(0, 'rgba(0, 0, 0, 0.8)')
+                bgGradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)')
+                
+                ctx.fillStyle = bgGradient
+              } catch (error) {
+                // Fallback if gradient creation fails
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'
+              }
+              
+              ctx.fill()
+              
+              // Add subtle border to label background
+              ctx.strokeStyle = 'rgba(255,255,255,0.1)'
+              ctx.lineWidth = 0.5
+              ctx.stroke()
 
-              // Draw text
+              // Draw text with shadow
               ctx.textAlign = 'center'
               ctx.textBaseline = 'middle'
-              ctx.fillStyle = node.type === 'paper' ? '#4ade80' : '#d1d5db'
-              ctx.fillText(label, node.x, node.y + size * 2 + fontSize/2)
+              ctx.fillStyle = isPaper 
+                ? isSelected ? '#4ade80' : '#22c55e'
+                : '#d1d5db'
+              ctx.shadowColor = 'rgba(0,0,0,0.5)'
+              ctx.shadowBlur = 2
+              ctx.fillText(
+                label,
+                x,
+                labelY + bckgDimensions[1]/2
+              )
+              ctx.shadowBlur = 0
             }
           }}
           
           // Improved link styling
-          linkColor={() => 'rgba(34, 197, 94, 0.15)'}
-          linkWidth={1}
-          linkDirectionalParticles={1}
-          linkDirectionalParticleWidth={1.4}
-          linkDirectionalParticleSpeed={0.006}
+          linkColor={() => 'rgba(34, 197, 94, 0.2)'}
+          linkWidth={2}
+          linkDirectionalParticles={3}
+          linkDirectionalParticleWidth={2}
+          linkDirectionalParticleSpeed={0.004}
+          linkDirectionalParticleColor={() => 'rgba(34, 197, 94, 0.5)'}
           
-          // Improved force simulation settings for better layout
-          d3AlphaDecay={0.01} // Slower decay for smoother movement
-          d3VelocityDecay={0.2} // Less friction for more natural movement
-          warmupTicks={50} 
-          cooldownTicks={Infinity} // Keep simulation running
-          onEngineStop={() => {
-            // Optional: do something when simulation stops
-          }}
+          // Improved force simulation settings
+          d3AlphaDecay={0.01}
+          d3VelocityDecay={0.2}
+          warmupTicks={100}
+          cooldownTicks={Infinity}
           
-          // Interaction settings
+          // Enhanced interaction settings
           enableNodeDrag={true}
           enableZoomInteraction={true}
           enablePanInteraction={true}
           minZoom={0.5}
-          maxZoom={5}
+          maxZoom={8}
           onNodeDragEnd={(node) => {
-            // Pin node on drag end
             node.fx = node.x;
             node.fy = node.y;
           }}
           
-          // Performance optimizations
-          
-          // Background and dimensions
+          // Performance and aesthetics
           backgroundColor="transparent"
           width={500}
           height={600}
@@ -272,18 +347,18 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
             exit={{ opacity: 0, y: 10 }}
             className="absolute bottom-20 left-4 p-4 glass-effect rounded-lg shadow-lg max-w-xs"
           >
-            <h4 className="text-sm font-medium text-primary">{hoveredNode.title}</h4>
+            <h4 className="text-sm font-medium text-primary">{hoveredNode?.data?.title}</h4>
             <p className="text-xs text-muted-foreground mt-1">
-              Type: {hoveredNode.type}
+              Type: {hoveredNode?.data?.type}
             </p>
-            {hoveredNode.citations && (
+            {hoveredNode?.data?.citations && (
               <p className="text-xs text-muted-foreground mt-1">
-                Citations: {hoveredNode.citations}
+                Citations: {hoveredNode?.data?.citations}
               </p>
             )}
-            {hoveredNode.year && (
+            {hoveredNode?.data?.year && (
               <p className="text-xs text-muted-foreground mt-1">
-                Year: {hoveredNode.year}
+                Year: {hoveredNode?.data?.year}
               </p>
             )}
           </motion.div>

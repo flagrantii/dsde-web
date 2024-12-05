@@ -20,13 +20,13 @@ export function useGraph(initialData: GraphData) {
   const filteredData = useMemo(() => {
     let filtered = {...graphData}
     filtered.nodes = graphData.nodes.filter(node => {
-      const matchesSearch = node.title.toLowerCase().includes(filters.search.toLowerCase())
-      const matchesType = filters.type === 'all' || node.type === filters.type
-      const matchesYear = node.year 
-        ? node.year >= filters.yearRange[0] && node.year <= filters.yearRange[1]
+      const matchesSearch = node.data.title.toLowerCase().includes(filters.search.toLowerCase())
+      const matchesType = filters.type === 'all' || node.data.type === filters.type
+      const matchesYear = node.data.year 
+        ? node.data.year >= filters.yearRange[0] && node.data.year <= filters.yearRange[1]
         : true
-      const matchesCitations = node.citations 
-        ? node.citations >= filters.minCitations
+      const matchesCitations = node.data.citations 
+        ? node.data.citations >= filters.minCitations
         : true
 
       return matchesSearch && matchesType && matchesYear && matchesCitations
@@ -36,11 +36,11 @@ export function useGraph(initialData: GraphData) {
     filtered.nodes.sort((a, b) => {
       switch (filters.sortBy) {
         case 'relevance':
-          return (b.relevance || 0) - (a.relevance || 0)
+          return (b.data.relevance || 0) - (a.data.relevance || 0)
         case 'citations':
-          return (b.citations || 0) - (a.citations || 0)
+          return (b.data.citations || 0) - (a.data.citations || 0)
         case 'year':
-          return (b.year || 0) - (a.year || 0)
+          return (b.data.year || 0) - (a.data.year || 0)
         default:
           return 0
       }
