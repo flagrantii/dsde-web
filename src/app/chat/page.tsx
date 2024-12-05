@@ -82,10 +82,31 @@ export default function ChatPage() {
   // Add dispatch declaration
   const dispatch = useDispatch()
 
+  // Move handleClearSelection declaration before it's used
+  const handleClearSelection = useCallback(() => {
+    setSelectedNode(null)
+  }, [])
+
+  // Add view details handler
+  const handleViewDetails = useCallback(() => {
+    if (selectedNode) {
+      // Scroll paper details into view or trigger modal
+      const detailsElement = document.getElementById('paper-details')
+      detailsElement?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [selectedNode])
+
+  // Add loading states for better UX
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loadingState, setLoadingState] = useState<'idle' | 'thinking' | 'generating'>('idle')
+
   // Handle message submission with selection logic
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() || isLoading) return
+    if (isSubmitting || !input.trim()) return
+
+    setIsSubmitting(true)
+    setLoadingState('thinking')
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -98,10 +119,14 @@ export default function ChatPage() {
 
     setMessages(prev => [...prev, userMessage])
     setInput('')
-    setIsLoading(true)
 
-    setTimeout(() => {
+    try {
       const hasPaper = Math.random() > 0.5
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      setLoadingState('generating')
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: hasPaper 
@@ -115,6 +140,10 @@ export default function ChatPage() {
       setMessages(prev => [...prev, assistantMessage])
       
       if (hasPaper && selectedNode) {
+        // Add node creation animation
+        setLoadingState('idle')
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
         const newNodeId = Date.now().toString()
         const newNode: GraphNode = {
           id: newNodeId,
@@ -135,9 +164,12 @@ export default function ChatPage() {
           strength: 0.5 
         }))
       }
-
-      setIsLoading(false)
-    }, 1000)
+    } catch (error) {
+      console.error('Error:', error)
+    } finally {
+      setIsSubmitting(false)
+      setLoadingState('idle')
+    }
   }
 
   // Handle node selection
@@ -153,11 +185,6 @@ export default function ChatPage() {
       return prev
     })
   }, [setSelectionHistory])
-
-  // Clear selection
-  const handleClearSelection = useCallback(() => {
-    setSelectedNode(null)
-  }, [])
 
   // Add history clear handler
   const handleClearHistory = useCallback((nodeId: string) => {
@@ -210,7 +237,7 @@ export default function ChatPage() {
           className={cn(
             "flex flex-col transition-all duration-300 ease-in-out",
             showGraph 
-              ? "w-2/3 border-r border-border" 
+              ? "w-1/2 border-r border-border" 
               : "w-full"
           )}
         >
@@ -222,6 +249,7 @@ export default function ChatPage() {
                   <ChatSelection
                     selectedNode={selectedNode}
                     onClear={handleClearSelection}
+                    onViewDetails={handleViewDetails}
                   />
                 )}
               </AnimatePresence>
@@ -313,6 +341,21 @@ export default function ChatPage() {
           }}
           onClose={handleClearSelection}
         />
+      )}
+
+      {/* Update loading indicator */}
+      {loadingState !== 'idle' && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 bg-secondary/80 backdrop-blur-sm rounded-full shadow-lg"
+        >
+          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          <span className="text-sm">
+            {loadingState === 'thinking' ? 'Analyzing your question...' : 'Generating response...'}
+          </span>
+        </motion.div>
       )}
     </div>
   )
