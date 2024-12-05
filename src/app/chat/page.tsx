@@ -194,9 +194,9 @@ export default function ChatPage() {
   }, [setSelectionHistory])
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 p-4 border-b border-border bg-background/80 backdrop-blur-sm z-10">
+      <div className="absolute top-0 left-0 right-0 h-16 p-4 border-b border-border bg-background/80 backdrop-blur-sm z-10">
         <div className="max-w-8xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/">
@@ -231,7 +231,7 @@ export default function ChatPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-1 pt-16">
+      <div className="flex flex-1 pt-16 h-[calc(100vh-4rem)]">
         {/* Chat Container */}
         <div 
           className={cn(

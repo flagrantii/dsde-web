@@ -124,6 +124,32 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
     }))
   }), [graph])
 
+  // Add window size tracking with proper initial values
+  const [dimensions, setDimensions] = useState({ width: 800, height: 800 })
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Update dimensions when container size changes
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { clientWidth, clientHeight } = containerRef.current
+        setDimensions({
+          width: clientWidth,
+          height: clientHeight
+        })
+      }
+    }
+
+    updateDimensions()
+    const resizeObserver = new ResizeObserver(updateDimensions)
+    
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current)
+    }
+
+    return () => resizeObserver.disconnect()
+  }, [])
+
   if (isComponentLoading) {
     return (
       <div className="w-full h-full flex items-center justify-center">
@@ -138,7 +164,7 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
   }
 
   return (
-    <div className="relative w-full h-full graph-container">
+    <div ref={containerRef} className="relative w-full h-full graph-container">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -302,8 +328,8 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
           
           // Performance and aesthetics
           backgroundColor="transparent"
-          width={945}
-          height={935}
+          width={dimensions.width}
+          height={dimensions.height}
           
           // Event handlers
           onNodeClick={handleNodeClick as any}
