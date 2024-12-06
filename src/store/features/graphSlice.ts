@@ -22,10 +22,8 @@ const initialState: GraphData = {
       data: {
         title: 'Machine Learning Basics', 
         type: 'paper', 
-        color: '#22c55e',
         citations: 1200,
         year: 2022,
-        relevance: 0.95
       }
     }),
     createNode({ 
@@ -33,10 +31,8 @@ const initialState: GraphData = {
       data: {
         title: 'Deep Learning', 
         type: 'paper', 
-        color: '#22c55e',
         citations: 800,
         year: 2023,
-        relevance: 0.85
       }
     }),
     createNode({ 
@@ -44,7 +40,6 @@ const initialState: GraphData = {
       data: {
         title: 'Neural Networks', 
         type: 'keyword', 
-        color: '#6b7280' 
       }
     }),
   ],

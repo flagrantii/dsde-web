@@ -23,12 +23,13 @@ export interface GraphData {
   links: GraphLink[]
 }
 
-export interface FilterOptions {
-  type: 'all' | 'paper' | 'keyword'
-  search: string
-  yearRange: [number, number]
-  minCitations: number
-  sortBy: 'relevance' | 'citations' | 'year'
+export interface Paper {
+  title: string
+  type: 'paper' | 'keyword'
+  citations?: number
+  year?: number
+  abstract?: string
+  authors?: string[]
 }
 
 export interface Message {
@@ -39,14 +40,3 @@ export interface Message {
   selectedNode?: GraphNode | null
   status?: 'selected' | 'unselected'
 }
-
-export interface Paper {
-  title: string
-  type: 'paper' | 'keyword'
-  color?: string
-  citations?: number
-  year?: number
-  abstract?: string
-  authors?: string[]
-  relevance?: number
-} 

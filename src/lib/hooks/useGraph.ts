@@ -35,8 +35,6 @@ export function useGraph(initialData: GraphData) {
     // Sort nodes based on selected criteria
     filtered.nodes.sort((a, b) => {
       switch (filters.sortBy) {
-        case 'relevance':
-          return (b.data.relevance || 0) - (a.data.relevance || 0)
         case 'citations':
           return (b.data.citations || 0) - (a.data.citations || 0)
         case 'year':

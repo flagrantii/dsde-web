@@ -17,16 +17,6 @@ const ForceGraph2D = dynamic(
   { ssr: false }
 )
 
-interface GraphLink {
-  source: string
-  target: string
-}
-
-interface GraphData {
-  nodes: GraphNode[]
-  links: GraphLink[]
-}
-
 interface ResearchGraphProps {
   selectedPaper?: string
   onNodeClick: (node: GraphNode) => void

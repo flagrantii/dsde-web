@@ -10,7 +10,7 @@ import Link from "next/link"
 import { ChatMessage } from "@/src/components/ui/chat-message"
 import ResearchGraph from "@/src/components/research/graph/ResearchGraph"
 import PaperDetails from "@/src/components/research/papers/PaperDetails"
-import { Message, GraphNode, Paper, GraphData, FilterOptions } from "@/src/types"
+import { Message, GraphNode, Paper, GraphData } from "@/src/types"
 import { useGraph } from "@/src/lib/hooks/useGraph"
 import { ChatSelection } from '@/src/components/ui/chat-selection'
 import { addLink, addNode } from "@/src/store/features/graphSlice"
@@ -150,10 +150,8 @@ export default function ChatPage() {
           data: {
             title: 'New Related Paper',
             type: 'paper',
-            color: '#22c55e',
             year: 2024,
             citations: 0,
-            relevance: 0.8
           }
         }
         
