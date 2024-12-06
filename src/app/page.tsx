@@ -67,7 +67,7 @@ export default function HomePage() {
                 className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-green-400 to-primary animate-gradient bg-300% inline-block"
                 whileHover={{ scale: 1.02 }}
               >
-                Discover Research
+                The Nodi
               </motion.span>
               <br />
               <span className="text-4xl md:text-5xl text-muted-foreground">

@@ -198,33 +198,36 @@ export default function ChatPage() {
         <div className="max-w-8xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/">
-              <Button variant="ghost" size="sm" className="gap-2">
+              <Button variant="ghost" size="sm" className="gap-2 hover:bg-secondary/80">
                 <ArrowLeft className="w-4 h-4" />
-                Back to Home
+                <span className="font-semibold text-primary">nodi</span>
               </Button>
             </Link>
-            <h1 className="text-sm font-medium">Research Assistant</h1>
+            <div className="h-4 w-px bg-border" />
+            <h1 className="text-sm font-medium text-muted-foreground">Research Assistant</h1>
           </div>
           
-          {/* Graph Toggle Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowGraph(prev => !prev)}
-            className="gap-2"
-          >
-            {showGraph ? (
-              <>
-                <LayoutList className="w-4 h-4" />
-                Hide Graph
-              </>
-            ) : (
-              <>
-                <LayoutGrid className="w-4 h-4" />
-                Show Graph
-              </>
-            )}
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Graph Toggle Button with improved styling */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowGraph(prev => !prev)}
+              className="gap-2 hover:bg-secondary/80"
+            >
+              {showGraph ? (
+                <>
+                  <LayoutList className="w-4 h-4 text-primary" />
+                  <span className="text-muted-foreground">Hide Graph</span>
+                </>
+              ) : (
+                <>
+                  <LayoutGrid className="w-4 h-4 text-primary" />
+                  <span className="text-muted-foreground">Show Graph</span>
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 

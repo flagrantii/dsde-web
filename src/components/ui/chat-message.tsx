@@ -39,7 +39,7 @@ export function ChatMessage({ content, role, timestamp, selectedNode, status }: 
               ? "bg-primary/20 text-secondary-foreground"
               : "bg-secondary text-secondary-foreground"
           )}>
-            {role === 'user' ? 'You' : 'Assistant'}
+            {role === 'user' ? 'You' : 'Nodi'}
           </span>
           <span className="text-xs text-muted-foreground">
             {new Date(timestamp).toLocaleTimeString()}
@@ -68,6 +68,13 @@ export function ChatMessage({ content, role, timestamp, selectedNode, status }: 
             <span className="opacity-50">({selectedNode.data.year})</span>
           )}
         </motion.div>
+      )}
+      
+      {role !== 'user' && (
+        <div className="flex items-center gap-2 absolute -top-6 left-0">
+          <span className="text-xs font-semibold text-primary">nodi</span>
+          <div className="w-1 h-1 rounded-full bg-primary/50 animate-pulse" />
+        </div>
       )}
     </motion.div>
   )

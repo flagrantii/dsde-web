@@ -7,8 +7,22 @@ import { ErrorBoundary } from '@/src/components/error-boundary'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Research Discovery Assistant',
-  description: 'An intelligent research discovery platform powered by AI',
+  title: 'nodi - AI Research Assistant',
+  description: 'Discover and connect research papers through intelligent conversations',
+  keywords: 'research, AI, papers, academic, graph, visualization',
+  authors: [{ name: 'nodi' }],
+  openGraph: {
+    title: 'nodi - AI Research Assistant',
+    description: 'Discover and connect research papers through intelligent conversations',
+    type: 'website',
+    locale: 'en_US',
+    siteName: 'nodi',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'nodi - AI Research Assistant',
+    description: 'Discover and connect research papers through intelligent conversations',
+  },
 }
 
 export default function RootLayout({
