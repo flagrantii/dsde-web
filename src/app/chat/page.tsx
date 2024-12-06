@@ -10,7 +10,7 @@ import Link from "next/link"
 import { ChatMessage } from "@/src/components/ui/chat-message"
 import ResearchGraph from "@/src/components/research/graph/ResearchGraph"
 import PaperDetails from "@/src/components/research/papers/PaperDetails"
-import { Message, GraphNode, Paper, GraphData } from "@/src/types"
+import { Message, GraphNode, GraphData } from "@/src/types"
 import { useGraph } from "@/src/lib/hooks/useGraph"
 import { ChatSelection } from '@/src/components/ui/chat-selection'
 import { addLink, addNode } from "@/src/store/features/graphSlice"

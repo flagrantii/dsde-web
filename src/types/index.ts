@@ -1,6 +1,6 @@
 export interface GraphNode {
   id: string
-  data: Paper
+  data: Node
   x?: number
   y?: number
   vx?: number
@@ -23,7 +23,7 @@ export interface GraphData {
   links: GraphLink[]
 }
 
-export interface Paper {
+export interface Node {
   title: string
   type: 'paper' | 'keyword'
   citations?: number
