@@ -125,7 +125,7 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
   }), [graph])
 
   // Add window size tracking with proper initial values
-  const [dimensions, setDimensions] = useState({ width: 800, height: 800 })
+  const [dimensions, setDimensions] = useState({ width: 930, height: 930 })
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Update dimensions when container size changes
