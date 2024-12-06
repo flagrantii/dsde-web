@@ -51,12 +51,9 @@ export default function ChatPage() {
   // Graph state using custom hook
   const {
     graphData,
-    filters,
-    setFilters,
     hoveredNode,
     graphLoading,
     fgRef,
-    filteredData,
     handleNodeClick,
     handleNodeHover,
     zoomIn,
