@@ -1,8 +1,8 @@
 'use client'
 
 import { Button } from "@/src/components/ui/button"
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
-import { ArrowRight, Brain, LucideGitGraph, MessageSquare, Sparkles, Library, ChevronDown, Star } from "lucide-react"
+import { motion, useScroll, useTransform } from "framer-motion"
+import { ArrowRight, Brain, LucideGitGraph, MessageSquare, Sparkles, ChevronDown, Star } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 
@@ -206,22 +206,6 @@ export default function HomePage() {
           transition={{ delay: 1.4 }}
           className="mt-32 text-center"
         >
-          <h2 className="text-3xl font-bold mb-12">Trusted by Researchers</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <motion.div
-                key={testimonial.name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.6 + index * 0.1 }}
-                className="p-6 rounded-lg bg-secondary/20 backdrop-blur-sm border border-border/50"
-              >
-                <p className="text-muted-foreground italic mb-4">"{testimonial.quote}"</p>
-                <div className="font-medium">{testimonial.name}</div>
-                <div className="text-sm text-muted-foreground">{testimonial.title}</div>
-              </motion.div>
-            ))}
-          </div>
         </motion.div>
       </div>
     </main>
@@ -262,23 +246,5 @@ const stats = [
   {
     value: "24/7",
     label: "AI Assistance"
-  }
-]
-
-const testimonials = [
-  {
-    quote: "This tool has revolutionized how I discover and connect research papers in my field.",
-    name: "Dr. Sarah Chen",
-    title: "AI Researcher, Stanford University"
-  },
-  {
-    quote: "The visual graph interface makes understanding paper relationships incredibly intuitive.",
-    name: "Prof. Michael Brown",
-    title: "Computer Science, MIT"
-  },
-  {
-    quote: "An indispensable tool for staying current with research in my field.",
-    name: "Dr. Emily Martinez",
-    title: "Research Lead, Google AI"
   }
 ]

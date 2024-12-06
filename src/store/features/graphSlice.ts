@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { GraphData, GraphNode, GraphLink } from '@/src/types'
+import { mockGraphData } from '@/src/types/mock'
 
 // Helper function to create node objects with proper prototypes
 const createNode = (node: GraphNode): GraphNode => ({
@@ -16,37 +17,18 @@ const createNode = (node: GraphNode): GraphNode => ({
 })
 
 const initialState: GraphData = {
-  nodes: [
-    createNode({ 
-      id: '1', 
-      data: {
-        title: 'Machine Learning Basics', 
-        type: 'paper', 
-        citations: 1200,
-        year: 2022,
-      }
-    }),
-    createNode({ 
-      id: '2', 
-      data: {
-        title: 'Deep Learning', 
-        type: 'paper', 
-        citations: 800,
-        year: 2023,
-      }
-    }),
-    createNode({ 
-      id: '3', 
-      data: {
-        title: 'Neural Networks', 
-        type: 'keyword', 
-      }
-    }),
-  ],
-  links: [
-    { source: '1', target: '3', strength: 0.8 },
-    { source: '2', target: '3', strength: 0.6 },
-  ]
+  nodes: mockGraphData.nodes.map(node => ({
+    ...node,
+    data: {
+      title: node.title,
+      type: node.type as 'paper' | 'keyword',
+      year: node.year,
+      abstract: node.abstract,
+      authors: node.authors,
+      source: node.source
+    }
+  })),
+  links: mockGraphData.links
 }
 
 export const graphSlice = createSlice({

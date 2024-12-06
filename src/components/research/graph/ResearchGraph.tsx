@@ -3,11 +3,8 @@
 import { useCallback, useEffect, useState, useRef, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ZoomIn, ZoomOut, RotateCw, Loader2 } from 'lucide-react'
+import { RotateCw, Loader2 } from 'lucide-react'
 import { Button } from '../../ui/button'
-import { useDispatch, useSelector } from 'react-redux'
-import { RootState } from '@/src/store'
-import { updateGraphData, resetGraph } from '@/src/store/features/graphSlice'
 import { useGraphOperations } from '@/src/lib/hooks/useGraphOperations'
 import { GraphNode } from "@/src/types"
 
@@ -140,6 +137,12 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
     return () => resizeObserver.disconnect()
   }, [])
 
+  // Add helper function for text truncation
+  const truncateText = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text
+    return text.slice(0, maxLength) + '...'
+  }
+
   if (isComponentLoading) {
     return (
       <div className="w-full h-full flex items-center justify-center">
@@ -227,9 +230,10 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
             ctx.lineWidth = isSelected ? 2 : 1
             ctx.stroke()
 
-            // Draw label with improved visibility
+            // Draw label with improved visibility and truncation
             if (globalScale > 0.4 || isHovered || isSelected) {
-              const label = node.data.title
+              const maxLabelLength = isHovered ? 60 : 30 // Show more text on hover
+              const label = truncateText(node.data.title, maxLabelLength)
               ctx.font = `${fontSize}px Inter`
               const textWidth = ctx.measureText(label).width
               const padding = 4
@@ -274,7 +278,7 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
               ctx.lineWidth = 0.5
               ctx.stroke()
 
-              // Draw text with shadow
+              // Draw text with shadow and truncation
               ctx.textAlign = 'center'
               ctx.textBaseline = 'middle'
               ctx.fillStyle = isPaper 

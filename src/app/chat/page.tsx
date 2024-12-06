@@ -17,28 +17,7 @@ import { addLink, addNode } from "@/src/store/features/graphSlice"
 import { useDispatch } from 'react-redux'
 import { SelectionHistory } from '@/src/components/ui/selection-history'
 import { useLocalStorage } from "@/src/lib/hooks/useLocalStorage"
-
-// Initial graph data
-const initialGraphData = {
-  nodes: [
-    { 
-      id: '1',
-      data: {
-        title: 'Machine Learning Basics', 
-        type: 'paper', 
-        color: '#22c55e',
-        citations: 1200,
-        year: 2022,
-        relevance: 0.95
-      }
-    },
-    // Add more sample nodes here
-  ],
-  links: [
-    { source: '1', target: '3', strength: 0.8 },
-    // Add more sample links here
-  ]
-}
+import { mockGraphData } from "@/src/types/mock"
 
 export default function ChatPage() {
   // Chat state
@@ -59,7 +38,20 @@ export default function ChatPage() {
     zoomIn,
     zoomOut,
     resetView
-  } = useGraph(initialGraphData as GraphData)
+  } = useGraph({
+    nodes: mockGraphData.nodes.map(node => ({
+      ...node,
+      data: {
+        title: node.title,
+        type: node.type as 'paper' | 'keyword',
+        year: node.year,
+        abstract: node.abstract,
+        authors: node.authors,
+        source: node.source
+      }
+    })),
+    links: mockGraphData.links
+  } as GraphData)
 
   // Selected paper state
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
@@ -332,8 +324,8 @@ export default function ChatPage() {
           paper={{
             title: selectedNode?.data?.title,
             type: selectedNode?.data?.type,
-            abstract: "Sample abstract for the selected paper...",
-            authors: ["Author 1", "Author 2"],
+            abstract: selectedNode?.data?.abstract,
+            authors: selectedNode?.data?.authors,
             year: selectedNode?.data?.year,
             citations: selectedNode?.data?.citations,
           }}
