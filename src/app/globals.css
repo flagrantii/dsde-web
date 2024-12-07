@@ -62,19 +62,18 @@
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
   }
   
-  .scrollbar-thumb-border::-webkit-scrollbar {
+  .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
   }
   
-  .scrollbar-thumb-border::-webkit-scrollbar-track {
+  .scrollbar-thin::-webkit-scrollbar-track {
     background: transparent;
   }
   
-  .scrollbar-thumb-border::-webkit-scrollbar-thumb {
-    background-color: var(--border);
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--secondary));
     border-radius: 3px;
   }
 }
