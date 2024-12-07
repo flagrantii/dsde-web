@@ -57,8 +57,6 @@ export function useChatManager() {
         )
       }
 
-      console.log("Response:", response)
-
       // Add AI response
       dispatch(addMessage({
         chatId: response.chat_id,
@@ -79,8 +77,6 @@ export function useChatManager() {
           chatId: response.chat_id,
           graphData: mergedGraph
         }))
-
-        console.log("Merged Graph:", mergedGraph)
       }
 
       return response

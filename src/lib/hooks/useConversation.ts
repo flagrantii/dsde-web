@@ -77,7 +77,7 @@ export function useConversation() {
         conversationService.saveConversation(currentChatId, {
           messages,
           graphData
-        }).catch(console.error)
+        })
       }, 1000)
 
       return () => clearTimeout(saveTimeout)
