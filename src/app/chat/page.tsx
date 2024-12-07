@@ -187,66 +187,83 @@ export default function ChatPage() {
             {messages.length === 0 ? (
               <EmptyChat />
             ) : (
-              <div className="flex-1 overflow-y-auto space-y-4 pb-4 scrollbar-thin scrollbar-thumb-border px-2">
-                <AnimatePresence initial={false}>
+              <motion.div 
+                className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-border"
+                layout
+              >
+                <AnimatePresence mode="popLayout">
                   {messages.map((message) => (
-                    <ChatMessage
+                    <motion.div
                       key={message.id}
-                      {...message}
-                    />
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                      layout
+                    >
+                      <ChatMessage {...message} />
+                    </motion.div>
                   ))}
                 </AnimatePresence>
-                
-                {loadingState !== 'idle' && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center gap-2 p-4"
-                  >
-                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                    <span className="text-sm text-muted-foreground">
-                      {loadingState === 'thinking' ? 'nodi is thinking...' : 'Generating insights...'}
-                    </span>
-                  </motion.div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
+              </motion.div>
             )}
 
-            {/* Input Form */}
-            <motion.form
-              onSubmit={onSubmit}
-              className="flex gap-2 pt-4 border-t border-border"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
+            {/* Input Form - Fixed at bottom */}
+            <motion.div
+              className="border-t border-border bg-background/50 backdrop-blur-sm"
+              layout
+              initial={false}
             >
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about research papers..."
-                className="flex-1 bg-secondary/50"
-                disabled={isLoading}
-              />
-              <Button 
-                type="submit" 
-                disabled={isLoading || !input.trim()}
-                className="bg-primary hover:bg-primary/90"
+              <motion.form
+                onSubmit={onSubmit}
+                className="flex gap-2 p-4"
+                initial={false}
               >
-                <Send className="w-4 h-4" />
-              </Button>
-            </motion.form>
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Ask about research papers..."
+                  className="flex-1 bg-secondary/50"
+                  disabled={isLoading}
+                />
+                <Button 
+                  type="submit" 
+                  disabled={isLoading || !input.trim()}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {isLoading ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    >
+                      <Loader2 className="w-4 h-4" />
+                    </motion.div>
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </Button>
+              </motion.form>
+            </motion.div>
           </div>
         </div>
 
         {/* Graph Panel */}
-        {showGraph && (
-          <div className="h-full bg-secondary/30">
+        <AnimatePresence mode="wait">
+          {showGraph && (
+            <motion.div
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: "50%" }}
+              exit={{ opacity: 0, width: 0 }}
+              transition={{ duration: 0.3 }}
+              className="h-full bg-secondary/30 border-l border-border"
+            >
               <ResearchGraph
                 selectedPaper={selectedNode?.id}
                 onNodeClick={handleNodeSelect}
               />
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
       {selectedNode && (
         <PaperDetails
