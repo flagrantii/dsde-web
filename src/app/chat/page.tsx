@@ -10,11 +10,8 @@ import Link from "next/link"
 import { ChatMessage } from "@/src/components/ui/chat-message"
 import ResearchGraph from "@/src/components/research/graph/ResearchGraph"
 import PaperDetails from "@/src/components/research/papers/PaperDetails"
-import { Message, GraphNode, GraphData } from "@/src/types"
-import { useGraph } from "@/src/lib/hooks/useGraph"
+import { GraphNode } from "@/src/types"
 import { ChatSelection } from '@/src/components/ui/chat-selection'
-import { addLink, addNode } from "@/src/store/features/graphSlice"
-import { useDispatch } from 'react-redux'
 import { SelectionHistory } from '@/src/components/ui/selection-history'
 import { useLocalStorage } from "@/src/lib/hooks/useLocalStorage"
 import { useChatManager } from "@/src/lib/hooks/useChatManager"
@@ -242,22 +239,14 @@ export default function ChatPage() {
         </div>
 
         {/* Graph Panel */}
-        <AnimatePresence>
-          {showGraph && (
-            <motion.div
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: "50%" }}
-              exit={{ opacity: 0, width: 0 }}
-              transition={{ duration: 0.3 }}
-              className="h-full bg-secondary/30"
-            >
+        {showGraph && (
+          <div className="h-full bg-secondary/30">
               <ResearchGraph
                 selectedPaper={selectedNode?.id}
                 onNodeClick={handleNodeSelect}
               />
-            </motion.div>
-          )}
-        </AnimatePresence>
+          </div>
+        )}
       </div>
       {selectedNode && (
         <PaperDetails

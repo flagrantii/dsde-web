@@ -101,13 +101,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    circle at center,
-    rgba(34, 197, 94, 0.1),
-    transparent 70%
-  );
   pointer-events: none;
-  animation: pulse 4s ease-in-out infinite;
 }
 
 @keyframes pulse {
