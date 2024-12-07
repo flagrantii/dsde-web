@@ -107,8 +107,8 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
         .distanceMax(20) // Reduced from 40
 
       fgRef.current.d3Force('link')
-        .distance(80) // Increased from 30 to 80 for much longer links
-        .strength(1)  // Reduced from 2 to allow more stretching
+        .distance(150)    // Increased from 80 to make links longer
+        .strength(0.3)    // Reduced from 1 to make links more flexible
     }
   }, [graphData, updateGraphData])
 
@@ -216,7 +216,7 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
 
     // Add border
     ctx.strokeStyle = isSelected 
-      ? '#22c55e' 
+      ? '#ff5311' 
       : isHovered 
         ? '#ffffff' 
         : 'rgba(255,255,255,0.2)'
@@ -393,18 +393,12 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
           nodeCanvasObject={nodeCanvasObject}
           
           // Improved link styling
-          linkColor={() => 'rgba(34, 197, 94, 0.2)'}
-          linkWidth={5} // Increased from 4
-          linkDirectionalParticles={8} // Increased from 6
+          linkColor={() => 'rgba(39, 197, 94, 0.2)'}
+          linkWidth={5} // Increased from 
+          linkDirectionalParticles={3} // Increased from 6
           linkDirectionalParticleWidth={5} // Increased from 4
-          linkDirectionalParticleSpeed={0.002} // Reduced from 0.003 for better visibility on longer links
+          linkDirectionalParticleSpeed={0.001} // Reduced from 0.003 for better visibility on longer links
           linkDirectionalParticleColor={() => 'rgba(34, 197, 94, 0.5)'}
-          
-          // Improved force simulation settings
-          d3AlphaDecay={0.03} // Increased from 0.02 for faster settling
-          d3VelocityDecay={0.3} // Increased from 0.2 for more stability
-          warmupTicks={150} // Increased from 100
-          cooldownTime={1500} // Reduced from 2000
           
           // Enhanced interaction settings
           enableNodeDrag={true}

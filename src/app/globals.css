@@ -90,6 +90,11 @@
 
 .graph-container {
   position: relative;
+  cursor: grab;
+}
+
+.graph-container:active {
+  cursor: grabbing;
 }
 
 .graph-container::before {
@@ -106,8 +111,9 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.8; }
+  0% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.2); opacity: 0.3; }
+  100% { transform: scale(1); opacity: 0.5; }
 }
 
 .graph-link:hover {
@@ -155,5 +161,9 @@
   50% {
     opacity: 0.2;
   }
+}
+
+.drag-indicator {
+  animation: pulse 1.5s ease-in-out infinite;
 }
  
