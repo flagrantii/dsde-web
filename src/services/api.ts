@@ -10,7 +10,7 @@ const api = axios.create({
 
 export const chatService = {
   async initialChat(message: string) {
-    const response = await api.post('/api/initial_chat', {
+    const response = await api.post('/api/continue_chat', {
       chat_id: null,
       message,
       currentGraph: null
