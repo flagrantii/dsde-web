@@ -11,7 +11,7 @@ export function ChatMessage({ content, role, timestamp, selectedNode, status }: 
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -20, scale: 0.95 }}
       className={cn(
-        "flex items-start gap-4 p-4 rounded-lg backdrop-blur-sm relative",
+        "flex flex-col gap-2 p-4 rounded-lg backdrop-blur-sm relative",
         role === 'user' 
           ? "ml-auto bg-primary/10 border border-primary/20 max-w-[80%]" 
           : "bg-secondary/50 border border-secondary/20 max-w-[80%]",
@@ -26,50 +26,44 @@ export function ChatMessage({ content, role, timestamp, selectedNode, status }: 
         />
       )}
       
-      <div className="flex-1 space-y-2">
-        <motion.div 
-          className="flex items-center gap-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          <span className={cn(
-            "px-2 py-1 rounded-full text-xs font-medium",
-            role === 'user' 
-              ? "bg-primary/20 text-secondary-foreground"
-              : "bg-secondary text-secondary-foreground"
-          )}>
-            {role === 'user' ? 'You' : 'Nodi'}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {new Date(timestamp).toLocaleTimeString()}
-          </span>
-        </motion.div>
-        
-        <motion.p 
-          className="text-sm leading-relaxed"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          {content}
-        </motion.p>
+      <div className="flex items-center gap-2">
+        <span className={cn(
+          "px-2 py-1 rounded-full text-xs font-medium",
+          role === 'user' 
+            ? "bg-primary/20 text-secondary-foreground"
+            : "bg-secondary text-secondary-foreground"
+        )}>
+          {role === 'user' ? 'You' : 'Nodi'}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {new Date(timestamp).toLocaleTimeString()}
+        </span>
       </div>
-      
+
       {selectedNode && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"
+          className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/30 p-2 rounded-md"
         >
           <div className="w-2 h-2 rounded-full bg-primary/50" />
-          <span>Selected: {selectedNode.title}</span>
-          {selectedNode.year && (
-            <span className="opacity-50">({selectedNode.year})</span>
-          )}
+          <div className="flex flex-col">
+            <span className="font-medium">Selected: {selectedNode.title}</span>
+            {selectedNode.year && (
+              <span className="opacity-50">({selectedNode.year})</span>
+            )}
+          </div>
         </motion.div>
       )}
-    
+      
+      <motion.p 
+        className="text-sm leading-relaxed"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+      >
+        {content}
+      </motion.p>
     </motion.div>
   )
 } 

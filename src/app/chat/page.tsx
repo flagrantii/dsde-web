@@ -78,7 +78,7 @@ export default function ChatPage() {
   const onNodeSelect = useCallback((node: GraphNode) => {
     handleNodeSelect(node)
     // Force update input with the node title
-    const prompt = `Tell me more about "${node.title}"`
+    const prompt = `Tell me more papers like "${node.title}"`
     setInput(prompt)
     
     setSelectionHistory((prev: GraphNode[]) => {
@@ -108,7 +108,7 @@ export default function ChatPage() {
   // Add this effect to handle input updates when selected node changes
   useEffect(() => {
     if (selectedNode) {
-      const prompt = `Tell me more about "${selectedNode.title}"`
+      const prompt = `Tell me more papers like "${selectedNode.title}"`
       setInput(prompt)
     }
   }, [selectedNode])
