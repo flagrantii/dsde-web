@@ -3,22 +3,16 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
+import { GraphNode } from '@/src/types'
 
 interface PaperDetailsProps {
-  paper: {
-    title: string
-    type: string
-    abstract?: string
-    authors?: string[]
-    year?: number
-    citations?: number
-  } | null
+  paper: GraphNode | null
   onClose: () => void
 }
 
 export default function PaperDetails({ paper, onClose }: PaperDetailsProps) {
   if (!paper) return null
-
+  console.log(paper)
   return (
     <AnimatePresence mode="wait">
       <motion.div

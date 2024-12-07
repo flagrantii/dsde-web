@@ -40,7 +40,7 @@ export function SelectionHistory({ history, onSelect, onClear }: SelectionHistor
                 className="text-xs pr-6"
                 onClick={() => onSelect(node)}
               >
-                {node.data.title}
+                {node.title}
               </Button>
               <Button
                 variant="ghost"

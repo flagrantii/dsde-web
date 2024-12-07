@@ -63,19 +63,13 @@ export function ChatMessage({ content, role, timestamp, selectedNode, status }: 
           className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"
         >
           <div className="w-2 h-2 rounded-full bg-primary/50" />
-          <span>Selected: {selectedNode.data.title}</span>
-          {selectedNode.data.year && (
-            <span className="opacity-50">({selectedNode.data.year})</span>
+          <span>Selected: {selectedNode.title}</span>
+          {selectedNode.year && (
+            <span className="opacity-50">({selectedNode.year})</span>
           )}
         </motion.div>
       )}
-      
-      {role !== 'user' && (
-        <div className="flex items-center gap-2 absolute -top-6 left-0">
-          <span className="text-xs font-semibold text-primary">nodi</span>
-          <div className="w-1 h-1 rounded-full bg-primary/50 animate-pulse" />
-        </div>
-      )}
+    
     </motion.div>
   )
 } 

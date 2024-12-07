@@ -25,19 +25,19 @@ export function ChatSelection({ selectedNode, onClear, onViewDetails }: ChatSele
       <div className="flex items-center gap-3">
         <SelectionIndicator active size="lg" />
         <div className="flex flex-col">
-          <span className="text-sm font-medium">{selectedNode.data.title}</span>
+          <span className="text-sm font-medium">{selectedNode.title}</span>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{selectedNode.data.type}</span>
-            {selectedNode.data.year && (
+            <span>{selectedNode.type}</span>
+            {selectedNode.year && (
               <>
                 <span>•</span>
-                <span>{selectedNode.data.year}</span>
+                <span>{selectedNode.year}</span>
               </>
             )}
-            {selectedNode.data.citations && (
+            {selectedNode.citations && (
               <>
                 <span>•</span>
-                <span>{selectedNode.data.citations} citations</span>
+                <span>{selectedNode.citations} citations</span>
               </>
             )}
           </div>

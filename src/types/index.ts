@@ -1,6 +1,12 @@
 export interface GraphNode {
   id: string
-  data: Node
+  title: string
+  type: 'paper' | 'keyword'
+  citations?: number
+  year?: number
+  abstract?: string
+  authors?: string[]
+  source?: string
   x?: number
   y?: number
   vx?: number
@@ -23,20 +29,21 @@ export interface GraphData {
   links: GraphLink[]
 }
 
-export interface Node {
-  title: string
-  type: 'paper' | 'keyword'
-  citations?: number
-  year?: number
-  abstract?: string
-  authors?: string[]
-}
-
 export interface Message {
   id: string
   content: string
   role: 'user' | 'assistant'
   timestamp: Date
   selectedNode?: GraphNode | null
-  status?: 'selected' | 'unselected'
+  status: 'selected' | 'unselected'
+}
+
+export interface ChatState {
+  currentChatId: string | null
+  conversations: {
+    [key: string]: {
+      messages: Message[]
+      graphData: GraphData | null
+    }
+  }
 }

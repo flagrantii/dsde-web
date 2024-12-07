@@ -7,6 +7,7 @@ import { RotateCw, Loader2 } from 'lucide-react'
 import { Button } from '../../ui/button'
 import { useGraphOperations } from '@/src/lib/hooks/useGraphOperations'
 import { GraphNode } from "@/src/types"
+import { useChatManager } from '@/src/lib/hooks/useChatManager'
 
 // Dynamically import ForceGraph2D with no SSR
 const ForceGraph2D = dynamic(
@@ -20,6 +21,7 @@ interface ResearchGraphProps {
 }
 
 export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGraphProps) {
+  const { graphData } = useChatManager()
   const {
     graph,
     nodes,
@@ -33,29 +35,26 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
 
   // Reset node positions while keeping the graph structure
   const resetPositions = useCallback(() => {
-    if (fgRef.current) {
+    if (fgRef.current && graphData?.nodes) {
       // Reset zoom and center
       fgRef.current.centerAt(0, 0, 1000)
       fgRef.current.zoom(1, 1000)
 
-      // Reset all nodes positions
-      const updatedNodes = graph.nodes.map(node => ({
+      // Reset all nodes positions with proper typing
+      const updatedNodes: GraphNode[] = graphData.nodes.map(node => ({
         ...node,
-        // Remove any fixed positions
         fx: undefined,
         fy: undefined,
-        // Set random initial positions in a circle
         x: Math.cos(Math.random() * 2 * Math.PI) * 200,
         y: Math.sin(Math.random() * 2 * Math.PI) * 200,
-        // Reset velocities
         vx: 0,
         vy: 0
       }))
 
-      // Update the graph
+      // Update the graph with non-null values
       updateGraphData({
         nodes: updatedNodes,
-        links: [...graph.links]
+        links: graphData.links || []
       })
 
       // Reheat and restart the simulation
@@ -66,7 +65,7 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
         fgRef.current.d3Force('simulation').tick()
       }
     }
-  }, [graph, updateGraphData])
+  }, [graphData, updateGraphData])
 
   const handleNodeClick = useCallback((node: GraphNode) => {
     onNodeClick?.(node)
@@ -88,28 +87,163 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
     setIsComponentLoading(false)
   }, [])
 
-  // Create a mutable copy of the graph data with proper prototypes
-  const graphData = useMemo(() => ({
-    nodes: graph.nodes.map(node => ({
-      ...node,
-      __indexColor: undefined,
-      // Add any force graph specific properties
-      x: node.x,
-      y: node.y,
-      vx: 0,
-      vy: 0,
-      fx: node.fx,
-      fy: node.fy,
-      index: node.index
-    })),
-    links: graph.links.map(link => ({
-      ...link,
-      // Add any force graph specific properties
-      index: undefined,
-      source: link.source,
-      target: link.target
-    }))
-  }), [graph])
+  // Create a mutable copy of the graph data with proper prototypes and null checks
+  const graphDataForViz = useMemo(() => {
+    if (!graphData) return { nodes: [], links: [] }
+
+    console.log('Incoming graphData:', graphData)
+
+    return {
+      nodes: graphData.nodes?.map(node => ({
+        id: node.id,
+        title: node.title,
+        type: node.type,
+        year: node.year,
+        abstract: node.abstract,
+        authors: node.authors,
+        source: node.source,
+        x: Math.random() * 1000,
+        y: Math.random() * 1000,
+        vx: 0,
+        vy: 0,
+        fx: undefined,
+        fy: undefined,
+        __indexColor: undefined
+      })) || [],
+      links: graphData.links?.map(link => ({
+        source: link.source,
+        target: link.target,
+        index: undefined
+      })) || []
+    }
+  }, [graphData])
+
+  // Node canvas object with null checks
+  const nodeCanvasObject = useCallback((node: any, ctx: any, globalScale: number) => {
+    if (!node?.x || !node?.y || isNaN(node.x) || isNaN(node.y)) return
+
+    const data = node || {}
+    const isSelected = node?.id === selectedPaper
+    const isHovered = hoveredNode?.id === node?.id
+    const isPaper = data?.type === 'paper'
+    
+    const baseSize = isPaper ? 6 : 4
+    const size = isSelected || isHovered ? baseSize * 1.4 : baseSize
+    const fontSize = Math.min(4, 12/globalScale)
+    
+    const x = Number(node.x)
+    const y = Number(node.y)
+    
+    // Draw node glow effect
+    if (isSelected || isHovered) {
+      ctx.beginPath()
+      ctx.arc(x, y, size + 2, 0, 2 * Math.PI)
+      ctx.fillStyle = `rgba(34, 197, 94, ${isSelected ? 0.2 : 0.1})`
+      ctx.fill()
+    }
+    
+    // Draw main node
+    ctx.beginPath()
+    ctx.arc(x, y, size, 0, 2 * Math.PI)
+    
+    try {
+      // Create gradient for node
+      const gradient = ctx.createRadialGradient(
+        x, y, 0,
+        x, y, size
+      )
+      
+      if (isPaper) {
+        gradient.addColorStop(0, '#4ade80')
+        gradient.addColorStop(1, '#22c55e')
+      } else {
+        gradient.addColorStop(0, '#9ca3af')
+        gradient.addColorStop(1, '#6b7280')
+      }
+      
+      ctx.fillStyle = isHovered 
+        ? isPaper ? '#4ade80' : '#9ca3af'
+        : gradient
+    } catch (error) {
+      // Fallback if gradient creation fails
+      ctx.fillStyle = isPaper ? '#4ade80' : '#9ca3af'
+    }
+    
+    ctx.fill()
+
+    // Add border
+    ctx.strokeStyle = isSelected 
+      ? '#22c55e' 
+      : isHovered 
+        ? '#ffffff' 
+        : 'rgba(255,255,255,0.2)'
+    ctx.lineWidth = isSelected ? 2 : 1
+    ctx.stroke()
+
+    // Draw label with null checks
+    if (globalScale > 0.4 || isHovered || isSelected) {
+      const maxLabelLength = isHovered ? 60 : 30
+      const label = truncateText(data?.title || 'Untitled', maxLabelLength)
+      ctx.font = `${fontSize}px Inter`
+      const textWidth = ctx.measureText(label).width
+      const padding = 4
+      const bckgDimensions = [
+        textWidth + padding * 2,
+        fontSize + padding * 2
+      ]
+
+      // Draw label background with rounded corners
+      const radius = 4
+      const labelX = x - bckgDimensions[0] / 2
+      const labelY = y + size * 2
+      
+      try {
+        ctx.beginPath()
+        ctx.moveTo(labelX + radius, labelY)
+        ctx.lineTo(labelX + bckgDimensions[0] - radius, labelY)
+        ctx.quadraticCurveTo(labelX + bckgDimensions[0], labelY, labelX + bckgDimensions[0], labelY + radius)
+        ctx.lineTo(labelX + bckgDimensions[0], labelY + bckgDimensions[1] - radius)
+        ctx.quadraticCurveTo(labelX + bckgDimensions[0], labelY + bckgDimensions[1], labelX + bckgDimensions[0] - radius, labelY + bckgDimensions[1])
+        ctx.lineTo(labelX + radius, labelY + bckgDimensions[1])
+        ctx.quadraticCurveTo(labelX, labelY + bckgDimensions[1], labelX, labelY + bckgDimensions[1] - radius)
+        ctx.lineTo(labelX, labelY + radius)
+        ctx.quadraticCurveTo(labelX, labelY, labelX + radius, labelY)
+        ctx.closePath()
+        
+        // Create gradient for label background
+        const bgGradient = ctx.createLinearGradient(labelX, labelY, labelX, labelY + bckgDimensions[1])
+        bgGradient.addColorStop(0, 'rgba(0, 0, 0, 0.8)')
+        bgGradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)')
+        
+        ctx.fillStyle = bgGradient
+      } catch (error) {
+        // Fallback if gradient creation fails
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'
+      }
+      
+      ctx.fill()
+      
+      // Add subtle border to label background
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)'
+      ctx.lineWidth = 0.5
+      ctx.stroke()
+
+      // Draw text with shadow and truncation
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = isPaper 
+        ? isSelected ? '#4ade80' : '#22c55e'
+        : '#d1d5db'
+      ctx.shadowColor = 'rgba(0,0,0,0.5)'
+      ctx.shadowBlur = 2
+      ctx.fillText(
+        label,
+        x,
+        labelY + bckgDimensions[1]/2
+      )
+      ctx.shadowBlur = 0
+    }
+  }, [hoveredNode, selectedPaper])
 
   // Add window size tracking with proper initial values
   const [dimensions, setDimensions] = useState({ width: 930, height: 930 })
@@ -139,8 +273,8 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
 
   // Add helper function for text truncation
   const truncateText = (text: string, maxLength: number) => {
-    if (text.length <= maxLength) return text
-    return text.slice(0, maxLength) + '...'
+    if (text?.length <= maxLength) return text
+    return text?.slice(0, maxLength) + '...'
   }
 
   if (isComponentLoading) {
@@ -165,135 +299,10 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
       >
         <ForceGraph2D
           ref={fgRef}
-          graphData={graphData}
-          nodeLabel="title"
+          graphData={graphDataForViz}
+          nodeLabel={node => node?.title || 'Untitled'}
           nodeRelSize={6}
-          nodeCanvasObject={(node: any, ctx, globalScale) => {
-            // Early return if coordinates are invalid
-            if (!node?.x || !node?.y || isNaN(node.x) || isNaN(node.y)) return;
-
-            const isSelected = node.id === selectedPaper
-            const isHovered = hoveredNode?.id === node.id
-            const isPaper = node.data.type === 'paper'
-            
-            const baseSize = isPaper ? 6 : 4
-            const size = isSelected || isHovered ? baseSize * 1.4 : baseSize
-            const fontSize = Math.min(4, 12/globalScale)
-            
-            // Ensure coordinates are finite numbers
-            const x = Number(node.x)
-            const y = Number(node.y)
-            
-            // Draw node glow effect
-            if (isSelected || isHovered) {
-              ctx.beginPath()
-              ctx.arc(x, y, size + 2, 0, 2 * Math.PI)
-              ctx.fillStyle = `rgba(34, 197, 94, ${isSelected ? 0.2 : 0.1})`
-              ctx.fill()
-            }
-            
-            // Draw main node
-            ctx.beginPath()
-            ctx.arc(x, y, size, 0, 2 * Math.PI)
-            
-            try {
-              // Create gradient for node
-              const gradient = ctx.createRadialGradient(
-                x, y, 0,
-                x, y, size
-              )
-              
-              if (isPaper) {
-                gradient.addColorStop(0, '#4ade80')
-                gradient.addColorStop(1, '#22c55e')
-              } else {
-                gradient.addColorStop(0, '#9ca3af')
-                gradient.addColorStop(1, '#6b7280')
-              }
-              
-              ctx.fillStyle = isHovered 
-                ? isPaper ? '#4ade80' : '#9ca3af'
-                : gradient
-            } catch (error) {
-              // Fallback if gradient creation fails
-              ctx.fillStyle = isPaper ? '#4ade80' : '#9ca3af'
-            }
-            
-            ctx.fill()
-
-            // Add border
-            ctx.strokeStyle = isSelected 
-              ? '#22c55e' 
-              : isHovered 
-                ? '#ffffff' 
-                : 'rgba(255,255,255,0.2)'
-            ctx.lineWidth = isSelected ? 2 : 1
-            ctx.stroke()
-
-            // Draw label with improved visibility and truncation
-            if (globalScale > 0.4 || isHovered || isSelected) {
-              const maxLabelLength = isHovered ? 60 : 30 // Show more text on hover
-              const label = truncateText(node.data.title, maxLabelLength)
-              ctx.font = `${fontSize}px Inter`
-              const textWidth = ctx.measureText(label).width
-              const padding = 4
-              const bckgDimensions = [
-                textWidth + padding * 2,
-                fontSize + padding * 2
-              ]
-
-              // Draw label background with rounded corners
-              const radius = 4
-              const labelX = x - bckgDimensions[0] / 2
-              const labelY = y + size * 2
-              
-              try {
-                ctx.beginPath()
-                ctx.moveTo(labelX + radius, labelY)
-                ctx.lineTo(labelX + bckgDimensions[0] - radius, labelY)
-                ctx.quadraticCurveTo(labelX + bckgDimensions[0], labelY, labelX + bckgDimensions[0], labelY + radius)
-                ctx.lineTo(labelX + bckgDimensions[0], labelY + bckgDimensions[1] - radius)
-                ctx.quadraticCurveTo(labelX + bckgDimensions[0], labelY + bckgDimensions[1], labelX + bckgDimensions[0] - radius, labelY + bckgDimensions[1])
-                ctx.lineTo(labelX + radius, labelY + bckgDimensions[1])
-                ctx.quadraticCurveTo(labelX, labelY + bckgDimensions[1], labelX, labelY + bckgDimensions[1] - radius)
-                ctx.lineTo(labelX, labelY + radius)
-                ctx.quadraticCurveTo(labelX, labelY, labelX + radius, labelY)
-                ctx.closePath()
-                
-                // Create gradient for label background
-                const bgGradient = ctx.createLinearGradient(labelX, labelY, labelX, labelY + bckgDimensions[1])
-                bgGradient.addColorStop(0, 'rgba(0, 0, 0, 0.8)')
-                bgGradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)')
-                
-                ctx.fillStyle = bgGradient
-              } catch (error) {
-                // Fallback if gradient creation fails
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'
-              }
-              
-              ctx.fill()
-              
-              // Add subtle border to label background
-              ctx.strokeStyle = 'rgba(255,255,255,0.1)'
-              ctx.lineWidth = 0.5
-              ctx.stroke()
-
-              // Draw text with shadow and truncation
-              ctx.textAlign = 'center'
-              ctx.textBaseline = 'middle'
-              ctx.fillStyle = isPaper 
-                ? isSelected ? '#4ade80' : '#22c55e'
-                : '#d1d5db'
-              ctx.shadowColor = 'rgba(0,0,0,0.5)'
-              ctx.shadowBlur = 2
-              ctx.fillText(
-                label,
-                x,
-                labelY + bckgDimensions[1]/2
-              )
-              ctx.shadowBlur = 0
-            }
-          }}
+          nodeCanvasObject={nodeCanvasObject}
           
           // Improved link styling
           linkColor={() => 'rgba(34, 197, 94, 0.2)'}
@@ -367,18 +376,18 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
             exit={{ opacity: 0, y: 10 }}
             className="absolute bottom-20 left-4 p-4 glass-effect rounded-lg shadow-lg max-w-xs"
           >
-            <h4 className="text-sm font-medium text-primary">{hoveredNode?.data?.title}</h4>
+            <h4 className="text-sm font-medium text-primary">{hoveredNode?.title}</h4>
             <p className="text-xs text-muted-foreground mt-1">
-              Type: {hoveredNode?.data?.type}
+              Type: {hoveredNode?.type}
             </p>
-            {hoveredNode?.data?.citations && (
+            {hoveredNode?.citations && (
               <p className="text-xs text-muted-foreground mt-1">
-                Citations: {hoveredNode?.data?.citations}
+                Citations: {hoveredNode?.citations}
               </p>
             )}
-            {hoveredNode?.data?.year && (
+            {hoveredNode?.year && (
               <p className="text-xs text-muted-foreground mt-1">
-                Year: {hoveredNode?.data?.year}
+                Year: {hoveredNode?.year}
               </p>
             )}
           </motion.div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Send, Loader2, ArrowLeft, LayoutGrid, LayoutList } from "lucide-react"
 import { Button } from "@/src/components/ui/button"
@@ -17,47 +17,24 @@ import { addLink, addNode } from "@/src/store/features/graphSlice"
 import { useDispatch } from 'react-redux'
 import { SelectionHistory } from '@/src/components/ui/selection-history'
 import { useLocalStorage } from "@/src/lib/hooks/useLocalStorage"
-import { mockGraphData } from "@/src/types/mock"
+import { useChatManager } from "@/src/lib/hooks/useChatManager"
 
 export default function ChatPage() {
-  // Chat state
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const [showGraph, setShowGraph] = useState(true)
-
-  // Graph state using custom hook
   const {
-    graphData,
-    hoveredNode,
-    graphLoading,
-    fgRef,
-    handleNodeClick,
-    handleNodeHover,
-    zoomIn,
-    zoomOut,
-    resetView
-  } = useGraph({
-    nodes: mockGraphData.nodes.map(node => ({
-      ...node,
-      data: {
-        title: node.title,
-        type: node.type as 'paper' | 'keyword',
-        year: node.year,
-        abstract: node.abstract,
-        authors: node.authors,
-        source: node.source
-      }
-    })),
-    links: mockGraphData.links
-  } as GraphData)
+    messages,
+    selectedNode,
+    isLoading,
+    handleUserMessage,
+    handleAIResponse,
+    handleNodeSelect,
+    clearSelection
+  } = useChatManager()
 
-  // Selected paper state
-  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
-
-  // Add selection history state
+  const [input, setInput] = useState('')
+  const [showGraph, setShowGraph] = useState(true)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
   const [selectionHistory, setSelectionHistory] = useLocalStorage<GraphNode[]>('selection-history', [])
+  const [loadingState, setLoadingState] = useState<'idle' | 'thinking' | 'generating'>('idle')
 
   // Scroll to bottom of chat
   const scrollToBottom = useCallback(() => {
@@ -68,110 +45,36 @@ export default function ChatPage() {
     scrollToBottom()
   }, [messages, scrollToBottom])
 
-  // Add dispatch declaration
-  const dispatch = useDispatch()
-
-  // Move handleClearSelection declaration before it's used
-  const handleClearSelection = useCallback(() => {
-    setSelectedNode(null)
-  }, [])
-
-  // Add view details handler
-  const handleViewDetails = useCallback(() => {
-    if (selectedNode) {
-      // Scroll paper details into view or trigger modal
-      const detailsElement = document.getElementById('paper-details')
-      detailsElement?.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [selectedNode])
-
-  // Add loading states for better UX
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [loadingState, setLoadingState] = useState<'idle' | 'thinking' | 'generating'>('idle')
-
-  // Handle message submission with selection logic
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handle form submission
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (isSubmitting || !input.trim()) return
+    if (!input.trim() || isLoading) return
 
-    setIsSubmitting(true)
     setLoadingState('thinking')
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: input,
-      role: 'user',
-      timestamp: new Date(),
-      selectedNode: selectedNode,
-      status: selectedNode ? 'selected' : 'unselected'
-    }
-
-    setMessages(prev => [...prev, userMessage])
-    setInput('')
-
     try {
-      const hasPaper = Math.random() > 0.5
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setLoadingState('generating')
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: hasPaper 
-          ? "I found a relevant paper. Creating a new node in the graph..."
-          : "This is a regular response without paper detection.",
-        role: 'assistant',
-        timestamp: new Date(),
-        status: hasPaper ? 'selected' : 'unselected'
-      }
-
-      setMessages(prev => [...prev, assistantMessage])
-      
-      if (hasPaper && selectedNode) {
-        // Add node creation animation
-        setLoadingState('idle')
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        const newNodeId = Date.now().toString()
-        const newNode: GraphNode = {
-          id: newNodeId,
-          data: {
-            title: 'New Related Paper',
-            type: 'paper',
-            year: 2024,
-            citations: 0,
-          }
-        }
-        
-        dispatch(addNode(newNode))
-        dispatch(addLink({ 
-          source: selectedNode.id, 
-          target: newNodeId,
-          strength: 0.5 
-        }))
-      }
+      await handleUserMessage(input)
+      setInput('')
+      await handleAIResponse(input)
     } catch (error) {
       console.error('Error:', error)
     } finally {
-      setIsSubmitting(false)
       setLoadingState('idle')
     }
   }
 
   // Handle node selection
-  const handleNodeSelect = useCallback((node: GraphNode) => {
-    setSelectedNode(node)
-    setInput(`Tell me more about "${node.data.title}"`)
+  const onNodeSelect = useCallback((node: GraphNode) => {
+    handleNodeSelect(node)
+    setInput(`Tell me more about "${node.title}"`)
     
     setSelectionHistory((prev: GraphNode[]) => {
       const exists = prev.some((n: GraphNode) => n.id === node.id)
       if (!exists) {
-        return [node, ...prev].slice(0, 5) // Keep last 5 selections
+        return [node, ...prev].slice(0, 5)
       }
       return prev
     })
-  }, [setSelectionHistory])
+  }, [handleNodeSelect, setSelectionHistory])
 
   // Add history clear handler
   const handleClearHistory = useCallback((nodeId: string) => {
@@ -179,6 +82,14 @@ export default function ChatPage() {
       prev.filter((node: GraphNode) => node.id !== nodeId)
     )
   }, [setSelectionHistory])
+
+  // Add this with other useCallback hooks
+  const handleViewDetails = useCallback(() => {
+    if (selectedNode) {
+      const detailsElement = document.getElementById('paper-details')
+      detailsElement?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [selectedNode])
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -238,7 +149,7 @@ export default function ChatPage() {
                 {selectedNode && (
                   <ChatSelection
                     selectedNode={selectedNode}
-                    onClear={handleClearSelection}
+                    onClear={clearSelection}
                     onViewDetails={handleViewDetails}
                   />
                 )}
@@ -246,7 +157,7 @@ export default function ChatPage() {
               
               <SelectionHistory
                 history={selectionHistory}
-                onSelect={handleNodeSelect}
+                onSelect={onNodeSelect}
                 onClear={handleClearHistory}
               />
             </div>
@@ -276,7 +187,7 @@ export default function ChatPage() {
 
             {/* Input Form */}
             <motion.form
-              onSubmit={handleSubmit}
+              onSubmit={onSubmit}
               className="flex gap-2 pt-4 border-t border-border"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -317,35 +228,11 @@ export default function ChatPage() {
           )}
         </AnimatePresence>
       </div>
-
-      {/* Paper Details Panel */}
       {selectedNode && (
         <PaperDetails
-          paper={{
-            title: selectedNode?.data?.title,
-            type: selectedNode?.data?.type,
-            abstract: selectedNode?.data?.abstract,
-            authors: selectedNode?.data?.authors,
-            year: selectedNode?.data?.year,
-            citations: selectedNode?.data?.citations,
-          }}
-          onClose={handleClearSelection}
+          paper={selectedNode}
+          onClose={clearSelection}
         />
-      )}
-
-      {/* Update loading indicator */}
-      {loadingState !== 'idle' && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 bg-secondary/80 backdrop-blur-sm rounded-full shadow-lg"
-        >
-          <Loader2 className="w-4 h-4 animate-spin text-primary" />
-          <span className="text-sm">
-            {loadingState === 'thinking' ? 'Analyzing your question...' : 'Generating response...'}
-          </span>
-        </motion.div>
       )}
     </div>
   )
