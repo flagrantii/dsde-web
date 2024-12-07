@@ -10,19 +10,7 @@ export const metadata: Metadata = {
   title: 'nodi - AI Research Assistant',
   description: 'Discover and connect research papers through intelligent conversations',
   keywords: 'research, AI, papers, academic, graph, visualization',
-  authors: [{ name: 'nodi' }],
-  openGraph: {
-    title: 'nodi - AI Research Assistant',
-    description: 'Discover and connect research papers through intelligent conversations',
-    type: 'website',
-    locale: 'en_US',
-    siteName: 'nodi',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'nodi - AI Research Assistant',
-    description: 'Discover and connect research papers through intelligent conversations',
-  },
+  authors: [{ name: 'nodi' }]
 }
 
 export default function RootLayout({
