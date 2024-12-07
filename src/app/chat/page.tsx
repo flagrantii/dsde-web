@@ -190,7 +190,7 @@ export default function ChatPage() {
             {messages.length === 0 ? (
               <EmptyChat />
             ) : (
-              <div className="flex-1 overflow-y-auto space-y-4 pb-4 scrollbar-thin scrollbar-thumb-border">
+              <div className="flex-1 overflow-y-auto space-y-4 pb-4 scrollbar-thin scrollbar-thumb-border px-2">
                 <AnimatePresence initial={false}>
                   {messages.map((message) => (
                     <ChatMessage
