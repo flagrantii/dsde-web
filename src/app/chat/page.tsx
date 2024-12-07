@@ -77,7 +77,9 @@ export default function ChatPage() {
   // Handle node selection
   const onNodeSelect = useCallback((node: GraphNode) => {
     handleNodeSelect(node)
-    setInput(`Tell me more about "${node.title}"`)
+    // Force update input with the node title
+    const prompt = `Tell me more about "${node.title}"`
+    setInput(prompt)
     
     setSelectionHistory((prev: GraphNode[]) => {
       const exists = prev.some((n: GraphNode) => n.id === node.id)
@@ -100,6 +102,14 @@ export default function ChatPage() {
     if (selectedNode) {
       const detailsElement = document.getElementById('paper-details')
       detailsElement?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [selectedNode])
+
+  // Add this effect to handle input updates when selected node changes
+  useEffect(() => {
+    if (selectedNode) {
+      const prompt = `Tell me more about "${selectedNode.title}"`
+      setInput(prompt)
     }
   }, [selectedNode])
 
