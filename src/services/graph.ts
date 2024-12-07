@@ -5,20 +5,25 @@ export const graphService = {
     if (!existingGraph) return newGraph || { nodes: [], links: [] }
     if (!newGraph) return existingGraph
 
-    const existingNodeIds = new Set(existingGraph.nodes.map(n => n.id))
+    const existingNodes = existingGraph.nodes || []
+    const existingLinks = existingGraph.links || []
+    const newNodes = newGraph.nodes || []
+    const newLinks = newGraph.links || []
+
+    const existingNodeIds = new Set(existingNodes.map(n => n.id))
     const existingLinkIds = new Set(
-      existingGraph.links.map(l => `${l.source}-${l.target}`)
+      existingLinks.map(l => `${l.source}-${l.target}`)
     )
 
     // Merge nodes
-    const newNodes = newGraph.nodes.filter(node => !existingNodeIds.has(node.id))
-    const mergedNodes = [...existingGraph.nodes, ...newNodes]
+    const filteredNewNodes = newNodes.filter(node => !existingNodeIds.has(node.id))
+    const mergedNodes = [...existingNodes, ...filteredNewNodes]
 
     // Merge links
-    const newLinks = newGraph.links.filter(link => 
+    const filteredNewLinks = newLinks.filter(link => 
       !existingLinkIds.has(`${link.source}-${link.target}`)
     )
-    const mergedLinks = [...existingGraph.links, ...newLinks]
+    const mergedLinks = [...existingLinks, ...filteredNewLinks]
 
     return {
       nodes: mergedNodes,
