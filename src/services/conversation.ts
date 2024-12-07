@@ -7,6 +7,10 @@ export const conversationService = {
     messages: Message[],
     graphData: GraphData | null
   }) {
+    if (typeof window === 'undefined') {
+      return
+    }
+
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       const conversations = stored ? JSON.parse(stored) : {}
@@ -27,6 +31,10 @@ export const conversationService = {
   },
 
   loadConversations(): ChatState['conversations'] {
+    if (typeof window === 'undefined') {
+      return {}
+    }
+
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (!stored) return {}
@@ -51,6 +59,10 @@ export const conversationService = {
   },
 
   deleteConversation(chatId: string) {
+    if (typeof window === 'undefined') {
+      return
+    }
+
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
