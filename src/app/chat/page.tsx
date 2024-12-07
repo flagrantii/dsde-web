@@ -205,6 +205,19 @@ export default function ChatPage() {
                     </motion.div>
                   ))}
                 </AnimatePresence>
+
+                {loadingState !== 'idle' && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center gap-2 p-4"
+                  >
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">
+                      {loadingState === 'thinking' ? 'nodi is thinking...' : 'Generating insights...'}
+                    </span>
+                  </motion.div>
+                )}
               </motion.div>
             )}
 
