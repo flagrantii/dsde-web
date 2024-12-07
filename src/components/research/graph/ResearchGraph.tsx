@@ -40,28 +40,36 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
       fgRef.current.centerAt(0, 0, 1000)
       fgRef.current.zoom(1, 1000)
 
-      // Reset all nodes positions with proper typing
-      const updatedNodes: GraphNode[] = graphData.nodes.map(node => ({
-        ...node,
-        fx: undefined,
-        fy: undefined,
-        x: Math.cos(Math.random() * 2 * Math.PI) * 200,
-        y: Math.sin(Math.random() * 2 * Math.PI) * 200,
-        vx: 0,
-        vy: 0
-      }))
+      // Calculate optimal radius based on node count
+      const nodeCount = graphData.nodes.length
+      const radius = Math.sqrt(nodeCount) * 30
 
-      // Update the graph with non-null values
+      // Distribute nodes in a spiral pattern
+      const updatedNodes: GraphNode[] = graphData.nodes.map((node, i) => {
+        const angle = (i * 2.4) // golden angle
+        const r = Math.sqrt(i) * radius / Math.sqrt(nodeCount)
+        return {
+          ...node,
+          fx: undefined,
+          fy: undefined,
+          x: r * Math.cos(angle),
+          y: r * Math.sin(angle),
+          vx: 0,
+          vy: 0
+        }
+      })
+
       updateGraphData({
         nodes: updatedNodes,
         links: graphData.links || []
       })
 
-      // Reheat and restart the simulation
+      // Reheat simulation with higher intensity
+      fgRef.current.d3Force('charge').strength(-150)
       fgRef.current.d3ReheatSimulation()
       
-      // Force a few simulation ticks for immediate feedback
-      for (let i = 0; i < 20; i++) {
+      // Run more simulation ticks
+      for (let i = 0; i < 100; i++) {
         fgRef.current.d3Force('simulation').tick()
       }
     }
@@ -91,25 +99,22 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
   const graphDataForViz = useMemo(() => {
     if (!graphData) return { nodes: [], links: [] }
 
-    console.log('Incoming graphData:', graphData)
-
+    const radius = Math.sqrt(graphData.nodes?.length || 0) * 50
+    
     return {
-      nodes: graphData.nodes?.map(node => ({
-        id: node.id,
-        title: node.title,
-        type: node.type,
-        year: node.year,
-        abstract: node.abstract,
-        authors: node.authors,
-        source: node.source,
-        x: Math.random() * 1000,
-        y: Math.random() * 1000,
-        vx: 0,
-        vy: 0,
-        fx: undefined,
-        fy: undefined,
-        __indexColor: undefined
-      })) || [],
+      nodes: graphData.nodes?.map((node, i) => {
+        const angle = (i * 2.4) // golden angle
+        const r = Math.sqrt(i) * radius / Math.sqrt(graphData.nodes?.length || 1)
+        return {
+          ...node,
+          x: r * Math.cos(angle),
+          y: r * Math.sin(angle),
+          vx: 0,
+          vy: 0,
+          fx: undefined,
+          fy: undefined
+        }
+      }) || [],
       links: graphData.links?.map(link => ({
         source: link.source,
         target: link.target,
@@ -277,6 +282,26 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
     return text?.slice(0, maxLength) + '...'
   }
 
+  // Add this effect to configure force simulation
+  useEffect(() => {
+    if (fgRef.current) {
+      fgRef.current.d3Force('charge')
+        .strength(-100)
+        .distanceMax(200)
+      
+      fgRef.current.d3Force('link')
+        .distance(50)
+        .strength(1)
+      
+      fgRef.current.d3Force('center')
+        .strength(0.3)
+        
+      // Add collision force to prevent overlap
+      fgRef.current.d3Force('collision')
+        .radius((node: any) => (node.type === 'paper' ? 10 : 8))
+    }
+  }, [])
+
   if (isComponentLoading) {
     return (
       <div className="w-full h-full flex items-center justify-center">
@@ -291,7 +316,11 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
   }
 
   return (
-    <div ref={containerRef} className="relative w-full h-full graph-container">
+    <div 
+      ref={containerRef} 
+      className="relative w-full h-full graph-container"
+      style={{ minHeight: '500px' }}
+    >
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -314,9 +343,9 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
           
           // Improved force simulation settings
           d3AlphaDecay={0.01}
-          d3VelocityDecay={0.2}
-          warmupTicks={100}
-          cooldownTicks={Infinity}
+          d3VelocityDecay={0.15}
+          warmupTicks={50}
+          cooldownTime={3000}
           
           // Enhanced interaction settings
           enableNodeDrag={true}
@@ -335,7 +364,12 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
           height={dimensions.height}
           
           // Event handlers
-          onNodeClick={handleNodeClick as any}
+          onNodeClick={(node: any) => {
+            // Ensure node has required GraphNode properties
+            if (node && node.id && node.title && node.type) {
+              onNodeClick(node as GraphNode);
+            }
+          }}
           onNodeHover={handleNodeHover as any}
         />
       </motion.div>

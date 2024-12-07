@@ -1,17 +1,25 @@
-import { ChatState } from '@/src/types'
+import { ChatState, Message, GraphData } from '@/src/types'
 
 const STORAGE_KEY = 'nodi_conversations'
 
 export const conversationService = {
   saveConversation(chatId: string, data: {
-    messages: ChatState['conversations'][string]['messages'],
-    graphData: ChatState['conversations'][string]['graphData']
+    messages: Message[],
+    graphData: GraphData | null
   }) {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       const conversations = stored ? JSON.parse(stored) : {}
       
-      conversations[chatId] = data
+      // Ensure proper data structure
+      conversations[chatId] = {
+        messages: data.messages.map(msg => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp) // Convert date strings back to Date objects
+        })),
+        graphData: data.graphData
+      }
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations))
     } catch (error) {
       console.error('Error saving conversation:', error)
@@ -21,7 +29,21 @@ export const conversationService = {
   loadConversations(): ChatState['conversations'] {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
-      return stored ? JSON.parse(stored) : {}
+      if (!stored) return {}
+
+      const conversations = JSON.parse(stored)
+      
+      // Convert stored data back to proper format
+      return Object.entries(conversations).reduce((acc, [id, data]: [string, any]) => {
+        acc[id] = {
+          messages: data.messages.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          })),
+          graphData: data.graphData
+        }
+        return acc
+      }, {} as ChatState['conversations'])
     } catch (error) {
       console.error('Error loading conversations:', error)
       return {}

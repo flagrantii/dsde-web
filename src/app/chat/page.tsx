@@ -18,6 +18,8 @@ import { useDispatch } from 'react-redux'
 import { SelectionHistory } from '@/src/components/ui/selection-history'
 import { useLocalStorage } from "@/src/lib/hooks/useLocalStorage"
 import { useChatManager } from "@/src/lib/hooks/useChatManager"
+import { ConversationList } from '@/src/components/ui/conversation-list'
+import { EmptyChat } from '@/src/components/ui/empty-chat'
 
 export default function ChatPage() {
   const {
@@ -50,13 +52,23 @@ export default function ChatPage() {
     e.preventDefault()
     if (!input.trim() || isLoading) return
 
-    setLoadingState('thinking')
+    const message = input.trim()
+    setInput('') // Clear input immediately for better UX
+    
     try {
-      await handleUserMessage(input)
-      setInput('')
-      await handleAIResponse(input)
+      // 1. Set thinking state and handle user message
+      setLoadingState('thinking')
+      const chatId = await handleUserMessage(message)
+      
+      // 2. Set generating state and get AI response for continuing chat
+      if (chatId && messages.length > 0) {
+        setLoadingState('generating')
+        await handleAIResponse(message, chatId)
+      }
     } catch (error) {
       console.error('Error:', error)
+      // Show error message to user
+      setLoadingState('idle')
     } finally {
       setLoadingState('idle')
     }
@@ -132,14 +144,17 @@ export default function ChatPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-1 pt-16 h-[calc(100vh-4rem)]">
+      <div className="flex flex-1 pt-16 h-screen">
+        {/* Conversation List */}
+        <ConversationList />
+
         {/* Chat Container */}
         <div 
           className={cn(
             "flex flex-col transition-all duration-300 ease-in-out",
             showGraph 
-              ? "w-1/2 border-r border-border"
-              : "w-full"
+              ? "w-[calc(50%-16rem)]"
+              : "w-[calc(100%-16rem)]"
           )}
         >
           <div className="flex-1 flex flex-col h-full p-4">
@@ -162,28 +177,34 @@ export default function ChatPage() {
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-4 pb-4 scrollbar-thin scrollbar-thumb-border">
-              <AnimatePresence initial={false}>
-                {messages.map((message) => (
-                  <ChatMessage
-                    key={message.id}
-                    {...message}
-                  />
-                ))}
-              </AnimatePresence>
-              
-              {isLoading && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center gap-2 p-4"
-                >
-                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  <span className="text-sm text-muted-foreground">Analyzing research...</span>
-                </motion.div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
+            {messages.length === 0 ? (
+              <EmptyChat />
+            ) : (
+              <div className="flex-1 overflow-y-auto space-y-4 pb-4 scrollbar-thin scrollbar-thumb-border">
+                <AnimatePresence initial={false}>
+                  {messages.map((message) => (
+                    <ChatMessage
+                      key={message.id}
+                      {...message}
+                    />
+                  ))}
+                </AnimatePresence>
+                
+                {loadingState !== 'idle' && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center gap-2 p-4"
+                  >
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">
+                      {loadingState === 'thinking' ? 'nodi is thinking...' : 'Generating insights...'}
+                    </span>
+                  </motion.div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
 
             {/* Input Form */}
             <motion.form
