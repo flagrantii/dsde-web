@@ -17,6 +17,7 @@ import { useLocalStorage } from "@/src/lib/hooks/useLocalStorage"
 import { useChatManager } from "@/src/lib/hooks/useChatManager"
 import { ConversationList } from '@/src/components/ui/conversation-list'
 import { EmptyChat } from '@/src/components/ui/empty-chat'
+import GraphErrorBoundary from "@/src/components/research/graph/GraphErrorBoundary"
 
 export default function ChatPage() {
   const {
@@ -270,10 +271,12 @@ export default function ChatPage() {
               transition={{ duration: 0.3 }}
               className="h-full bg-secondary/30 border-l border-border"
             >
-              <ResearchGraph
-                selectedPaper={selectedNode?.id}
-                onNodeClick={handleNodeSelect}
-              />
+              <GraphErrorBoundary>
+                <ResearchGraph
+                  selectedPaper={selectedNode?.id}
+                  onNodeClick={handleNodeSelect}
+                />
+              </GraphErrorBoundary>
             </motion.div>
           )}
         </AnimatePresence>
