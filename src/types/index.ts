@@ -5,6 +5,7 @@ export interface GraphNode {
   citations?: number
   year?: number
   abstract?: string
+  clusterId?: string
   authors?: string[]
   source?: string
   x?: number

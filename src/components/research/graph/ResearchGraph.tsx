@@ -20,6 +20,17 @@ interface ResearchGraphProps {
   onNodeClick: (node: GraphNode) => void
 }
 
+// Add this helper function at the top of the file, outside the component
+const getClusterCenter = (nodes: GraphNode[], clusterId: string) => {
+  const clusterNodes = nodes.filter(node => node.clusterId === clusterId)
+  if (!clusterNodes.length) return { x: 0, y: 0 }
+  
+  return {
+    x: clusterNodes.reduce((sum, node) => sum + (node.x || 0), 0) / clusterNodes.length,
+    y: clusterNodes.reduce((sum, node) => sum + (node.y || 0), 0) / clusterNodes.length
+  }
+}
+
 export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGraphProps) {
   const { graphData } = useChatManager()
   const {
@@ -36,42 +47,68 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
   // Reset node positions while keeping the graph structure
   const resetPositions = useCallback(() => {
     if (fgRef.current && graphData?.nodes) {
-      // Reset zoom and center
+      // Reset zoom and center with higher zoom
       fgRef.current.centerAt(0, 0, 1000)
-      fgRef.current.zoom(1, 1000)
+      fgRef.current.zoom(2, 1000) // Increased from 1.5
 
-      // Calculate optimal radius based on node count
+      // Calculate even smaller radius
       const nodeCount = graphData.nodes.length
-      const radius = Math.sqrt(nodeCount) * 30
+      const radius = Math.sqrt(nodeCount) * 3 // Reduced from 5
 
-      // Distribute nodes in a spiral pattern
-      const updatedNodes: GraphNode[] = graphData.nodes.map((node, i) => {
-        const angle = (i * 2.4) // golden angle
-        const r = Math.sqrt(i) * radius / Math.sqrt(nodeCount)
-        return {
-          ...node,
-          fx: undefined,
-          fy: undefined,
-          x: r * Math.cos(angle),
-          y: r * Math.sin(angle),
-          vx: 0,
-          vy: 0
+      // Group nodes by cluster
+      const clusters = new Map()
+      graphData.nodes.forEach((node, i) => {
+        const clusterId = node.clusterId || 'default'
+        if (!clusters.has(clusterId)) {
+          clusters.set(clusterId, [])
         }
+        clusters.get(clusterId).push(node)
+      })
+
+      const clusterCount = clusters.size
+      let nodeIndex = 0
+
+      // Position clusters in an even tighter circular arrangement
+      clusters.forEach((clusterNodes, clusterId) => {
+        const goldenRatio = (1 + Math.sqrt(5)) / 2
+        const clusterIndex = Array.from(clusters.keys()).indexOf(clusterId)
+        const angle = clusterIndex * 2 * Math.PI * goldenRatio
+        
+        // Make clusters even closer to center
+        const clusterRadius = radius / 8 // Reduced from radius/6
+        const clusterX = clusterRadius * Math.cos(angle)
+        const clusterY = clusterRadius * Math.sin(angle)
+
+        // Position nodes in even tighter spiral
+        clusterNodes.forEach((node: GraphNode, i: number) => {
+          const nodeAngle = (i * 2.4)
+          const r = Math.sqrt(i) * (radius / Math.sqrt(nodeCount)) * 0.15 // Reduced from 0.2
+          const x = clusterX + r * Math.cos(nodeAngle)
+          const y = clusterY + r * Math.sin(nodeAngle)
+
+          node.x = x
+          node.y = y
+          node.vx = 0
+          node.vy = 0
+          node.fx = undefined
+          node.fy = undefined
+          nodeIndex++
+        })
       })
 
       updateGraphData({
-        nodes: updatedNodes,
+        nodes: [...graphData.nodes],
         links: graphData.links || []
       })
 
-      // Reheat simulation with higher intensity
-      fgRef.current.d3Force('charge').strength(-150)
-      fgRef.current.d3ReheatSimulation()
-      
-      // Run more simulation ticks
-      for (let i = 0; i < 100; i++) {
-        fgRef.current.d3Force('simulation').tick()
-      }
+      // Even tighter force parameters
+      fgRef.current.d3Force('charge')
+        .strength(-25) // Reduced from -50
+        .distanceMax(20) // Reduced from 40
+
+      fgRef.current.d3Force('link')
+        .distance(80) // Increased from 30 to 80 for much longer links
+        .strength(1)  // Reduced from 2 to allow more stretching
     }
   }, [graphData, updateGraphData])
 
@@ -132,9 +169,10 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
     const isHovered = hoveredNode?.id === node?.id
     const isPaper = data?.type === 'paper'
     
-    const baseSize = isPaper ? 6 : 4
+    // Increase base size of nodes
+    const baseSize = isPaper ? 12 : 8 // Increased from 8/6
     const size = isSelected || isHovered ? baseSize * 1.4 : baseSize
-    const fontSize = Math.min(4, 12/globalScale)
+    const fontSize = Math.min(6, 16/globalScale) // Increased from 5, 14/globalScale
     
     const x = Number(node.x)
     const y = Number(node.y)
@@ -186,12 +224,12 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
     ctx.stroke()
 
     // Draw label with null checks
-    if (globalScale > 0.4 || isHovered || isSelected) {
-      const maxLabelLength = isHovered ? 60 : 30
+    if (globalScale > 0.3 || isHovered || isSelected) { // Show labels at slightly lower zoom
+      const maxLabelLength = isHovered ? 80 : 40 // Increased from 60/30
       const label = truncateText(data?.title || 'Untitled', maxLabelLength)
       ctx.font = `${fontSize}px Inter`
       const textWidth = ctx.measureText(label).width
-      const padding = 4
+      const padding = 6 // Increased from 4
       const bckgDimensions = [
         textWidth + padding * 2,
         fontSize + padding * 2
@@ -282,25 +320,46 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
     return text?.slice(0, maxLength) + '...'
   }
 
-  // Add this effect to configure force simulation
+  // Modify the useEffect for force simulation configuration
   useEffect(() => {
     if (fgRef.current) {
-      fgRef.current.d3Force('charge')
-        .strength(-100)
-        .distanceMax(200)
-      
-      fgRef.current.d3Force('link')
-        .distance(50)
-        .strength(1)
-      
+      // Much stronger center force
       fgRef.current.d3Force('center')
-        .strength(0.3)
+        .strength(2) // Increased from 1.5
+
+      // Even tighter charge force
+      fgRef.current.d3Force('charge')
+        .strength((node: any) => node.type === 'paper' ? -25 : -15) // Reduced from -50/-25
+        .distanceMax(100) // Increased from 20 to allow nodes to spread more
+
+      // Super tight link force
+      fgRef.current.d3Force('link')
+        .distance(80) // Increased from 30 to 80
+        .strength(1)  // Reduced from 2 to allow more stretching
+
+      // Stronger clustering force
+      const simulation = fgRef.current.d3Force('simulation')
+      simulation.force('cluster', (alpha: number) => {
+        const nodes = graphData?.nodes || []
+        const clusters = new Set(nodes.map(node => node.clusterId).filter(Boolean))
         
-      // Add collision force to prevent overlap
+        nodes.forEach((node: any) => {
+          if (!node.clusterId) return
+
+          const clusterCenter = getClusterCenter(nodes, node.clusterId)
+          const k = alpha * 3 // Increased from 2
+          
+          node.vx -= (node.x - clusterCenter.x) * k
+          node.vy -= (node.y - clusterCenter.y) * k
+        })
+      })
+
+      // Tighter collision with more overlap allowed
       fgRef.current.d3Force('collision')
-        .radius((node: any) => (node.type === 'paper' ? 10 : 8))
+        .radius((node: any) => (node.type === 'paper' ? 12 : 8)) // Slightly reduced from 14/10
+        .strength(0.4) // Reduced from 0.6 to allow more overlap
     }
-  }, [])
+  }, [graphData])
 
   if (isComponentLoading) {
     return (
@@ -330,29 +389,29 @@ export default function ResearchGraph({ selectedPaper, onNodeClick }: ResearchGr
           ref={fgRef}
           graphData={graphDataForViz}
           nodeLabel={node => node?.title || 'Untitled'}
-          nodeRelSize={6}
+          nodeRelSize={12}
           nodeCanvasObject={nodeCanvasObject}
           
           // Improved link styling
           linkColor={() => 'rgba(34, 197, 94, 0.2)'}
-          linkWidth={2}
-          linkDirectionalParticles={3}
-          linkDirectionalParticleWidth={2}
-          linkDirectionalParticleSpeed={0.004}
+          linkWidth={5} // Increased from 4
+          linkDirectionalParticles={8} // Increased from 6
+          linkDirectionalParticleWidth={5} // Increased from 4
+          linkDirectionalParticleSpeed={0.002} // Reduced from 0.003 for better visibility on longer links
           linkDirectionalParticleColor={() => 'rgba(34, 197, 94, 0.5)'}
           
           // Improved force simulation settings
-          d3AlphaDecay={0.01}
-          d3VelocityDecay={0.15}
-          warmupTicks={50}
-          cooldownTime={3000}
+          d3AlphaDecay={0.03} // Increased from 0.02 for faster settling
+          d3VelocityDecay={0.3} // Increased from 0.2 for more stability
+          warmupTicks={150} // Increased from 100
+          cooldownTime={1500} // Reduced from 2000
           
           // Enhanced interaction settings
           enableNodeDrag={true}
           enableZoomInteraction={true}
           enablePanInteraction={true}
-          minZoom={0.5}
-          maxZoom={8}
+          minZoom={0.2} // Reduced from 0.3
+          maxZoom={15} // Increased from 12
           onNodeDragEnd={(node) => {
             node.fx = node.x;
             node.fy = node.y;
