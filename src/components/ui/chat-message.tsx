@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { cn } from '@/src/lib/utils'
 import { Message } from '@/src/types'
+import ReactMarkdown from 'react-markdown';
 
 export function ChatMessage({ content, role, timestamp, selectedNode, status }: Message) {
   return (
@@ -62,7 +63,7 @@ export function ChatMessage({ content, role, timestamp, selectedNode, status }: 
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        {content}
+        <ReactMarkdown>{content}</ReactMarkdown>
       </motion.p>
     </motion.div>
   )
